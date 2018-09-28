@@ -1,8 +1,5 @@
-all: main
-	./main
+CC=gcc
+CFLAGS=-I.
 
-main: main.o
-		gcc -o main main.o
-
-main.o: main.c
-	gcc -c main.c
+ifj:main.o scanner.o
+	$(CC) -o ifj main.o scanner.o
