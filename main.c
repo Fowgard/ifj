@@ -25,24 +25,30 @@ int main(int argc, char *argv[])
 	}
 
 	
-	set_source_file(source_file); //SCANNER
+	set_source_file(source_file); //ve scanner.c
 
-	//inicializace tabulky symbolu
+	//TODO inicializace tabulky symbolu
 
-	//inicializace seznamu instrukci
+	//TODO inicializace seznamu instrukci
+	//do token se nacitaji delsi lexemy jako nazvy promenych a podobne
+	//jednomistne lexemy se vrati do result
+	char token[20] = "";//TODO implementovat STRING???? 
 
-	char token[20] = "";//TODO implementovat STRING????
-	//*token = "BRY DEN\n";
+	int result = 0;
 
-	//token[0] = 'a';
-	//*token[1] = '\0';
+	
+	
+	while (result != END_OF_FILE)
+	{
+		result = get_token(token);//ve scanner.c
+		if (result == END_OF_LINE)
+			printf(" KONEC RADKOVY\n");
 
+		//printf("TOKEN: %d \n", token[0]);
+	}
+	
 
-	get_token(token);
-	printf("TOKEN: %s \n", token);
-
+	
 	fclose(source_file);
-
-
 	return 0;
 }
