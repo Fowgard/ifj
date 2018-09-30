@@ -6,6 +6,7 @@
 #define END_OF_FILE 10
 #define END_OF_LINE 11
 #define NIL 12
+#define COMMENT 13
 
 #define DEF 20
 #define DO 21

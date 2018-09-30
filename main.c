@@ -44,7 +44,14 @@ int main(int argc, char *argv[])
 		if (result == END_OF_LINE)
 			printf(" KONEC RADKOVY\n");
 
+		if (result == COMMENT)
+			printf(" KOMMENT\n");
+
+		if(result ==69)
+			printf("TOKEN: %s \n", token);	
 		//printf("TOKEN: %d \n", token[0]);
+
+		
 	}
 	
 
