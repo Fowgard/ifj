@@ -14,6 +14,8 @@ int main(int argc, char *argv[])
 	FILE *source_file;
 
 	if (argc != 2) 
+
+		
 	{
 		fprintf(stderr, "Nesparvny pocet argumentu.\n");
 		exit(FILE_ERROR);
