@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include "scanner.c"
 //hlavicka pro lexikalni analyzator
 
 //identifikator
@@ -25,5 +29,6 @@
 #define LEX_ERROR    -1
 
 //hlavicka funkce simulujici lexikalni analyzator
+int get_token();
 void setSourceFile(FILE *f);
 int getNextToken(string *attr);

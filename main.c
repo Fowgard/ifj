@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <ctype.h>
 #include "scanner.h"
 #include "symtable.h"
 #include "token.h"
@@ -35,19 +35,16 @@ int main(int argc, char *argv[])
 	//TODO inicializace seznamu instrukci
 	//do token se nacitaji delsi lexemy jako nazvy promenych a podobne
 	//jednomistne lexemy se vrati do result
-	char token[20] = "";//TODO implementovat STRING???? 
 
-	token_t tok;
-	token_init(tok);
-	printf("%s\n",tok);
+	
 
-	int result = 0;
+	token_t result = NULL;
 
 	
 	
-	while (result != END_OF_FILE)
+	while (result->lexem != END_OF_FILE)
 	{
-		result = get_token(token);//ve scanner.c
+		result = get_token();//ve scanner.c
 		if (result == END_OF_LINE)
 			printf(" KONEC RADKOVY\n");
 
@@ -55,7 +52,7 @@ int main(int argc, char *argv[])
 			printf(" KOMMENT\n");
 
 		if(result ==69)
-			printf("TOKEN: %s \n", token);	
+			printf("TOKEN: %s \n", token->lexem);	
 		//printf("TOKEN: %d \n", token[0]);
 
 

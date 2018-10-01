@@ -1,7 +1,7 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
 #include "scanner.h"
+#include "main.c"
+
+
 
 FILE *source_file;
 
@@ -24,15 +24,14 @@ void print_file()
 void set_source_file(FILE *f)
 {
 	source_file = f;
-	
-	//print_file();	
 }
 
 
-int get_token(char token[])
+token_t get_token()
 {
+	token_t *token;
+	token_init(token);
 	int state = 0;//vychozi stav automatu
-	int symbol_order = 0;//kolikaty symbol tokenu je nacitan
 	while(1)
 	{
 		char symbol = fgetc(source_file);//nacteni jednoho symbolu(pismene)
@@ -40,15 +39,14 @@ int get_token(char token[])
 		{
 			case 0:	
 				if (symbol == EOF)
-					return END_OF_FILE;
+					return token->lexem = END_OF_FILE;
 				if (isspace(symbol))
 					state = 0;//IGNORE
 				//pismena nebo cislice
 				else if(isalnum(symbol))
 				{
 					state = 1;
-					token[symbol_order] = symbol;
-					symbol_order++;
+					token_putchar(symbol,token);
 				}
 				//komentar
 				else if (symbol == '#')
@@ -56,24 +54,24 @@ int get_token(char token[])
 			break;
 			//nacitani slova, cisla, atd
 			case 1:
+
 				if (isspace(symbol))//mezera => byl nacten cely token
 				{
 					if (symbol == EOF)
-						return END_OF_FILE;
-					return 69;//69 je docasne oznaceni konce tokenu, zmenit
+						return token->lexem = END_OF_FILE;
+					return token;//69 je docasne oznaceni konce tokenu, zmenit
 				}
 				else
 				{
-					token[symbol_order] = symbol;
-					symbol_order++;
+					token_putchar(symbol,token);
 				}
 			break;
 
 			case 3:
 				if (symbol == EOF)
-					return END_OF_FILE;
+					return token->lexem = END_OF_FILE;
 				if (symbol == '\n')
-					return COMMENT;
+					return token->lexem = COMMENT;
 			break;
 		}	
 		

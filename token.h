@@ -1,9 +1,7 @@
-
-
-
-
+#include "token.c"
 typedef struct Tokens {
-   char *data;
+   char *lexem;
+   int lenght;
 } token_t;  
 
 
