@@ -3,6 +3,7 @@
 
 #include "scanner.h"
 #include "symtable.h"
+#include "token.h"
 
 
 #define FILE_ERROR 5
@@ -34,6 +35,10 @@ int main(int argc, char *argv[])
 	//jednomistne lexemy se vrati do result
 	char token[20] = "";//TODO implementovat STRING???? 
 
+	token_t tok;
+	token_init(tok);
+	printf("%s\n",tok);
+
 	int result = 0;
 
 	
@@ -51,7 +56,7 @@ int main(int argc, char *argv[])
 			printf("TOKEN: %s \n", token);	
 		//printf("TOKEN: %d \n", token[0]);
 
-		
+
 	}
 	
 
