@@ -67,7 +67,8 @@ token_t get_token()
 				}
 			break;
 
-			case 3:
+			case 3: //case komentar
+				printf("%c",symbol);
 				if (symbol == EOF)
 					return token->lexem = END_OF_FILE;
 				if (symbol == '\n')
