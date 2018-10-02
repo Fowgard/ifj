@@ -1,4 +1,6 @@
-#include "token.c"
+#include <stdio.h>
+#include <stdlib.h>
+
 typedef struct Tokens {
    char *lexem;
    int lenght;

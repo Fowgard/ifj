@@ -2,18 +2,14 @@
 
 CC = gcc
 CFLAGS = -std=c99 -g -Wall -pedantic
-DEPS = scanner.h token.h
-OBJ = scanner.o token.o main.o 
+#DEPS = scanner.h token.h
+#OBJ = scanner token
 
 
+ifj: main.c token.o scanner.o 
+	$(CC) $(CFLAGS) -o $@ main.c scanner.o token.o
+#%.o: %.c $(DEPS)
+#	$(CC) -c -o $@ $< $(CFLAGS)
 
-%.o: %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
-
-ifj: $(OBJ) libmylib.a
-	$(CC) -o $@ $^ $(CFLAGS) -L. -lmylib
-
-libmylib.a: $(OBJ) #let's link library files into a static library
-	ar rcs $@ $(OBJ)
-
-libs: libmylib.a
+#ifj: $(OBJ) libmylib.a
+#	$(CC) -o $@ $^ $(CFLAGS) -L. -lmylib

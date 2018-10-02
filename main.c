@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
 #include "scanner.h"
 #include "symtable.h"
-#include "token.h"
 
 
 #define FILE_ERROR 5
@@ -38,23 +36,28 @@ int main(int argc, char *argv[])
 
 	
 
-	token_t result = NULL;
+	token_t *result;
+	token_init(result);
 
 	
 	
-	while (result->lexem != END_OF_FILE)
+	while (result->lexem[0] != END_OF_FILE)//TODO jeste doresit, nevieme jestli funguje, krajni situace
 	{
-		result = get_token();//ve scanner.c
-		if (result == END_OF_LINE)
+		get_token(result);//ve scanner.c
+
+		printf("%s\n",result->lexem);
+
+		/*
+		if (result.lexem == END_OF_LINE)
 			printf(" KONEC RADKOVY\n");
 
-		if (result == COMMENT)
+		if (result.lexem == COMMENT)
 			printf(" KOMMENT\n");
 
-		if(result ==69)
-			printf("TOKEN: %s \n", token->lexem);	
+		if(result.lexem ==69)
+			printf("TOKEN: %s \n", result.lexem);	
 		//printf("TOKEN: %d \n", token[0]);
-
+		*/
 
 	}
 	

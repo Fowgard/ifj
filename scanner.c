@@ -1,5 +1,4 @@
 #include "scanner.h"
-#include "main.c"
 
 
 
@@ -27,10 +26,9 @@ void set_source_file(FILE *f)
 }
 
 
-token_t get_token()
+void get_token(token_t *token)
 {
-	token_t *token;
-	token_init(token);
+	
 	int state = 0;//vychozi stav automatu
 	while(1)
 	{
@@ -39,7 +37,11 @@ token_t get_token()
 		{
 			case 0:	
 				if (symbol == EOF)
-					return token->lexem = END_OF_FILE;
+				{
+					token->lexem[0] = END_OF_FILE;
+					return;
+				}
+					
 				if (isspace(symbol))
 					state = 0;//IGNORE
 				//pismena nebo cislice
@@ -58,8 +60,11 @@ token_t get_token()
 				if (isspace(symbol))//mezera => byl nacten cely token
 				{
 					if (symbol == EOF)
-						return token->lexem = END_OF_FILE;
-					return token;//69 je docasne oznaceni konce tokenu, zmenit
+					{
+						token->lexem[0] = END_OF_FILE;
+						return;
+					}
+					return; //token;//69 je docasne oznaceni konce tokenu, zmenit
 				}
 				else
 				{
@@ -70,9 +75,17 @@ token_t get_token()
 			case 3: //case komentar
 				printf("%c",symbol);
 				if (symbol == EOF)
-					return token->lexem = END_OF_FILE;
+				{
+					token->lexem[0] = END_OF_FILE;
+					return;
+				}
+					
 				if (symbol == '\n')
-					return token->lexem = COMMENT;
+				{
+					token->lexem[0] = COMMENT;
+					return;
+				}
+					
 			break;
 		}	
 		
