@@ -43,12 +43,14 @@ int main(int argc, char *argv[])
 	{*/
 
 		int haveLexem = 0;
-		char *lexem = malloc(sizeof(char));
-		lexem[0] = '\0'
+		char *lexem = (char *) malloc(sizeof(char));
+		lexem[0] = '\0';
 		while(haveLexem != 1){
 			addCharToLexem(&lexem);
+
 			haveLexem = isLexem(&lexem);
 		}
+		printf("Lexém : %s\n", lexem);
 		/*
 		get_token(result);//ve scanner.c
 

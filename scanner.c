@@ -25,7 +25,7 @@ void set_source_file(FILE *f)
 	source_file = f;
 }
 
-
+/*
 void get_token(token_t *token)
 {
 	
@@ -114,14 +114,19 @@ void get_token(token_t *token)
 
 
 		
-	}
+	//}
 
 	//token[0] = fgetc(source_file); 
-}
+//}
 
 void addCharToLexem(char *lexem, char *znak){
 	char symbol = fgetc(source_file);
+			printf("Jsem tu\n");
 	lexem = realloc(lexem, sizeof(lexem)+1);
+	lexem = (char *) realloc(lexem, 25);
+
+
+			printf("Jsem tu\n");
 	lexem[sizeof(lexem)-2] = *znak;
 	lexem[sizeof(lexem)-1] = '\0';
 }
@@ -129,7 +134,7 @@ void addCharToLexem(char *lexem, char *znak){
 int isLexem(char *lexem){
 	if(isspace(lexem[sizeof(lexem)])){
 		return 1;
-	}else reutrn 0;
+	}else return 0;
 }
 
 
