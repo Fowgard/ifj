@@ -119,5 +119,17 @@ void get_token(token_t *token)
 	//token[0] = fgetc(source_file); 
 }
 
+void addCharToLexem(char *lexem, char *znak){
+	char symbol = fgetc(source_file);
+	lexem = realloc(lexem, sizeof(lexem)+1);
+	lexem[sizeof(lexem)-2] = *znak;
+	lexem[sizeof(lexem)-1] = '\0';
+}
+
+int isLexem(char *lexem){
+	if(isspace(lexem[sizeof(lexem)])){
+		return 1;
+	}else reutrn 0;
+}
 
 

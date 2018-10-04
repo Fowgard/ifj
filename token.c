@@ -1,14 +1,16 @@
 #include "token.h"
 void token_init(token_t *token)
 {
-	token->lexem = malloc(sizeof(char));
-	if(token->lexem == NULL)
+	token->type = malloc(sizeof(char)); // alokuje pro typ tokenu misto pro jeden char
+	token->attribute = malloc(sizeof(char)); // alokuje pro atribut tokenu misto pro jeden char
+	if((token->type == NULL)||(token->attribute == NULL)) // Pokud pri alokaci dojde k chybe, vypise ji a ukonci program
 	{
 		fprintf(stderr,"nemohli jsme allocovat\n");
 		exit(99);
 	}
-	token->lenght = 1; //ve skutecnosti je tam nic
-	token->lexem[0] = '\0';
+	//token->lenght = 1; Misto uchovavani delky (indexu) budeme pouzivat funkci sizeof(token->type) resp token->attribute
+	token->type[0] = '\0';
+	token->attribute[0] = '\0';
 }
 
 void token_putchar(char *znak, token_t *token)

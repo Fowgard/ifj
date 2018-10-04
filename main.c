@@ -11,15 +11,13 @@ int main(int argc, char *argv[])
 {
 	FILE *source_file;
 
-	if (argc != 2) 
-
-		
+	if (argc != 2)  // Pocet argumentu musi byt 2 - jmeno programu a nazev zdrojoveho souboru k prekladu 
 	{
 		fprintf(stderr, "Nesparvny pocet argumentu.\n");
 		exit(FILE_ERROR);
 	}
 	
-	if ((source_file = fopen(argv[1], "r")) == NULL)
+	if ((source_file = fopen(argv[1], "r")) == NULL) // Pokud se nepodari otevrit zdrojovy soubor k prekladu
 	{	
 		fprintf(stderr, "Nepodarilo se otevrit soubor.\n");
 		exit(FILE_ERROR);
@@ -41,12 +39,21 @@ int main(int argc, char *argv[])
 
 	
 	
-	while (result->lexem[0] != END_OF_FILE)//TODO jeste doresit, nevieme jestli funguje, krajni situace
-	{
+	/*while (result->attribute[0] != END_OF_FILE)//TODO jeste doresit, nevieme jestli funguje, krajni situace
+	{*/
+
+		int haveLexem = 0;
+		char *lexem = malloc(sizeof(char));
+		lexem[0] = '\0'
+		while(haveLexem != 1){
+			addCharToLexem(&lexem);
+			haveLexem = isLexem(&lexem);
+		}
+		/*
 		get_token(result);//ve scanner.c
 
 		printf("%s\n",result->lexem);
-
+		*/
 		/*
 		if (result.lexem == END_OF_LINE)
 			printf(" KONEC RADKOVY\n");
@@ -59,7 +66,7 @@ int main(int argc, char *argv[])
 		//printf("TOKEN: %d \n", token[0]);
 		*/
 
-	}
+	/*}*/
 	
 
 	
