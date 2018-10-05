@@ -11,9 +11,7 @@ int main(int argc, char *argv[])
 {
 	FILE *source_file;
 
-	if (argc != 2) 
-
-		
+	if (argc != 2) 		
 	{
 		fprintf(stderr, "Nesparvny pocet argumentu.\n");
 		exit(FILE_ERROR);
@@ -36,10 +34,10 @@ int main(int argc, char *argv[])
 
 	
 
-	token_t *result;
+	token_t *result = NULL;
 	token_init(result);
 
-    
+
 	
 	
 	while (result->attribute[0] != END_OF_FILE)//TODO jeste doresit, nevieme jestli funguje, krajni situace

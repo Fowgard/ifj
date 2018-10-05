@@ -1,7 +1,8 @@
 #include "token.h"
 void token_init(token_t *token)
 {
-	token->attribute = malloc(sizeof(char));
+	token->attribute = (char *) malloc(sizeof(char));
+	printf("AAA\n");
 	if(token->attribute == NULL)
 	{
 		fprintf(stderr,"nemohli jsme allocovat\n");
@@ -24,4 +25,7 @@ void token_putchar(char *znak, token_t *token)
 	token->lenght++;
 	//Hello darkness my old friend I come to see you again.
 	
+}
+void set_token(int type, char *attribute){
+
 }
