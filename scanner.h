@@ -50,4 +50,4 @@
 
 void set_source_file(FILE *f);
 int get_token(token_t *token);
-int is_key_word(char *lexem);
+int is_keyword(char *lexem);

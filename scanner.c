@@ -71,7 +71,7 @@ int get_token(token_t *token)
 
 				if (isspace(symbol))//mezera => byl nacten cely token
 				{
-					if(is_key_word(&symbol)){
+					if(is_keyword(&symbol)){
 						set_token(TYPE_KEYWORD, lexem);
 					}else{
 						set_token(TYPE_IDENTIFIER, lexem);
@@ -142,7 +142,7 @@ int get_token(token_t *token)
 }
 
 // Funkce ktera zkontroluje, zda neni lexem (predany v argumentu) klicove slovo
-int is_key_word(char *lexem)
+int is_keyword(char *lexem)
 {
 	return 0;
 }
