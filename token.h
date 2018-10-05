@@ -2,7 +2,8 @@
 #include <stdlib.h>
 
 typedef struct Tokens {
-   char *lexem;
+   char *type;
+   char *attribute;
    int lenght;
 } token_t;  
 

@@ -38,7 +38,7 @@ void get_token(token_t *token)
 			case 0:	
 				if (symbol == EOF)
 				{
-					token->lexem[0] = END_OF_FILE;
+					token->attribute[0] = END_OF_FILE;
 					return;
 				}
 					
@@ -61,7 +61,7 @@ void get_token(token_t *token)
 				{
 					if (symbol == EOF)
 					{
-						token->lexem[0] = END_OF_FILE;
+						token->attribute[0] = END_OF_FILE;
 						return;
 					}
 					return; //token;//69 je docasne oznaceni konce tokenu, zmenit
@@ -76,13 +76,13 @@ void get_token(token_t *token)
 				printf("%c",symbol);
 				if (symbol == EOF)
 				{
-					token->lexem[0] = END_OF_FILE;
+					token->attribute[0] = END_OF_FILE;
 					return;
 				}
 					
 				if (symbol == '\n')
 				{
-					token->lexem[0] = COMMENT;
+					token->attribute[0] = COMMENT;
 					return;
 				}
 					

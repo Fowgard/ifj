@@ -39,13 +39,14 @@ int main(int argc, char *argv[])
 	token_t *result;
 	token_init(result);
 
+    
 	
 	
-	while (result->lexem[0] != END_OF_FILE)//TODO jeste doresit, nevieme jestli funguje, krajni situace
+	while (result->attribute[0] != END_OF_FILE)//TODO jeste doresit, nevieme jestli funguje, krajni situace
 	{
 		get_token(result);//ve scanner.c
 
-		printf("%s\n",result->lexem);
+		printf("%s\n",result->attribute);
 
 		/*
 		if (result.lexem == END_OF_LINE)
