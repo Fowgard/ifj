@@ -13,10 +13,9 @@
 #define END_OF_LINE 11
 #define END_OF_TOKEN 12
 #define NIL 13
-#define COMMENT 14
-#define SUCCESS 15
-#define WRONG_NUMBER_FORMAT 16
-#define NEJAKA_KONSTANTA 17
+#define SUCCESS 14
+#define WRONG_NUMBER_FORMAT 15
+#define NEJAKA_KONSTANTA 16
 
 
 #define DEF 20
@@ -39,12 +38,6 @@
 #define TYPE_KEYWORD 50
 #define TYPE_IDENTIFIER 51
 #define TYPE_INT 52
-
-
-
-#define INIT_SYMBOL '/'
-
-
 
 
 

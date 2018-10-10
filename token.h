@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct Tokens {
-   char *type;
-   char *attribute;
+int key_counter = 0;
+
+typedef struct Token {
+   char *key;
+   char type;
+   char *lexem[];
    int lenght;
 } token_t;  
 
