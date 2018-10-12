@@ -2,6 +2,7 @@
 
 
 
+
 FILE *source_file;
  
 
@@ -65,8 +66,8 @@ int get_token(token_t *token)
 
 				if (isspace(symbol))//mezera => byl nacten cely token
 				{
-					keyword_check(token) // musime resit jeste funkce T_T
-					else if (symbol == EOF)
+					keyword_check(token); // musime resit jeste funkce T_T
+					if (symbol == EOF)
 						return END_OF_FILE;
 					else
 						return SUCCESS;
@@ -74,7 +75,7 @@ int get_token(token_t *token)
 				else
 				{
 					if(isalnum(symbol)){
-						strcat(lexem, &symbol); //Pridej znak k lexemu						
+					//Pridej znak k lexemu						
 					}else{
 						//tady se osetri pripady kdy dalsi znak je napriklad +, / apod
 					}
@@ -84,7 +85,7 @@ int get_token(token_t *token)
 			case STATE_INT:
 				if (isspace(symbol))//mezera => byl nacten cely token
 				{
-					set_type(TYPE_INT, lexem);
+					//set_type(TYPE_INT, lexem);
 					if (symbol == EOF)
 					{
 						return END_OF_FILE;
@@ -98,7 +99,7 @@ int get_token(token_t *token)
 						//Pokud je symbol cislo, tak se prida ke stavajicimu lexemu
 						if(isdigit(symbol))
 						{
-							strcat(lexem, &symbol); //Pridej znak k lexemu	
+							 //Pridej znak k lexemu	
 						}
 						//Pokud je symbol alfanumericky znak a neni cislo, vrat chybu - cislo nemuze byt spojeno s pismeny
 						else

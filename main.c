@@ -9,6 +9,8 @@
 
 int main(int argc, char *argv[])
 {
+
+
 	FILE *source_file;
 
 	if (argc != 2) 		
@@ -25,7 +27,7 @@ int main(int argc, char *argv[])
 
 	
 	set_source_file(source_file); //ve scanner.c
-
+	
 	//TODO inicializace tabulky symbolu
 
 	//TODO inicializace seznamu instrukci
@@ -33,18 +35,20 @@ int main(int argc, char *argv[])
 	//jednomistne lexemy se vrati do result
 
 	
-
+	
 	token_t *result = NULL;
 	token_init(result);
-
+	
 
 	
+
 	
-	while (result->attribute[0] != END_OF_FILE)//TODO jeste doresit, nevieme jestli funguje, krajni situace
+	//zatim 1 v podmince, neni implementovana hash table pro ulozeni tokenu
+	while (1)//result->word != END_OF_FILE //TODO jeste doresit, nevieme jestli funguje, krajni situace
 	{
 		get_token(result);//ve scanner.c
 
-		printf("%s\n",result->attribute);
+		//printf("%s\n",result->attribute);
 
 		/*
 		if (result.lexem == END_OF_LINE)
