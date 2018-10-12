@@ -128,8 +128,3 @@ int get_token(token_t *token)
 	return NEJAKA_KONSTANTA;
 }
 
-// Funkce ktera zkontroluje, zda neni lexem (predany v argumentu) klicove slovo
-int is_keyword(char *lexem)
-{
-	return 0;
-}
