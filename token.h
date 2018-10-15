@@ -15,21 +15,20 @@
 
 */
 typedef struct Token {
-  
-
-
-   //htab_listitem *attribute; TODO implementovat hash table
-   int type;
+  	int *attribute;// TODO implementovat hash table
+   	int type;
 } token_t;  
 
 
 typedef struct Lexem {
+	int lenght;
 	char *word;	
 } lexem_t;
 
 
 void token_init(token_t *token);
-void token_putchar(char *znak, token_t *token);
+void lexem_init(lexem_t *lexem);
+void lexem_putchar(lexem_t *lexem, char symbol);
 void set_token(int type, char *attribute);
 
 #define END_OF_FILE 10

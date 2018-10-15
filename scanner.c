@@ -27,6 +27,8 @@ void set_source_file(FILE *f)
 
 int get_token(token_t *token)
 {
+	lexem_t *lexem = malloc(sizeof (lexem_t));
+	lexem_init(lexem);
 	int state = STATE_START;//vychozi stav automatu
 	char symbol; //Zde uchovavame vzdy dalsi nacteny znak z prekladaneho souboru
 	while(state != END_OF_TOKEN)
@@ -46,14 +48,14 @@ int get_token(token_t *token)
 					if(isalpha(symbol))
 					{
 						state = STATE_ID_KW;
-						lexem_putchar(token, symbol);
+						lexem_putchar(lexem, symbol);
 					}
 					//Pokud je symbol cislo, zmen stav na cislo
 					else if(isdigit(symbol))
 					{
 						state = STATE_INT;
 						set_type(token, TYPE_INT);//Pridat symbol k lexemu a nastavy typ					
-						lexem_putchar(token, symbol);
+						lexem_putchar(lexem, symbol);
 					}
 				}
 				//Pokud je znak komentar
@@ -66,15 +68,19 @@ int get_token(token_t *token)
 
 				if (isspace(symbol))//mezera => byl nacten cely token
 				{
-					keyword_check(token); // musime resit jeste funkce T_T
+					keyword_check(token, lexem); // musime resit jeste funkce T_T
 					if (symbol == EOF)
 						return END_OF_FILE;
 					else
+					{
+						printf("%s \n", lexem->word);
 						return SUCCESS;
+					}
 				}
 				else
 				{
 					if(isalnum(symbol)){
+						lexem_putchar(lexem, symbol);
 					//Pridej znak k lexemu						
 					}else{
 						//tady se osetri pripady kdy dalsi znak je napriklad +, / apod

@@ -36,7 +36,9 @@ int main(int argc, char *argv[])
 
 	
 	
-	token_t *result = NULL;
+	token_t *result = malloc(sizeof(token_t));
+	if (result == NULL)
+		exit(99);
 	token_init(result);
 	
 
@@ -44,9 +46,9 @@ int main(int argc, char *argv[])
 
 	
 	//zatim 1 v podmince, neni implementovana hash table pro ulozeni tokenu
-	while (1)//result->word != END_OF_FILE //TODO jeste doresit, nevieme jestli funguje, krajni situace
+	while (get_token(result) != END_OF_FILE)//result->word != END_OF_FILE //TODO jeste doresit, nevieme jestli funguje, krajni situace
 	{
-		get_token(result);//ve scanner.c
+		//ve scanner.c
 
 		//printf("%s\n",result->attribute);
 
