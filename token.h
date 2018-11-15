@@ -3,17 +3,7 @@
 #include <string.h>
 
 
-//int key_counter = 0;
 
-/*
-
-
- 	char *key;
-   char type;
-   int lenght;
-   char *lexem[];
-
-*/
 typedef struct Token {
   	int *attribute;// TODO implementovat hash table
    	int type;
@@ -31,14 +21,19 @@ void lexem_init(lexem_t *lexem);
 void lexem_putchar(lexem_t *lexem, char symbol);
 void set_token(int type, char *attribute);
 
+#define FALSE 0
+#define TRUE 1
+
+
 #define END_OF_FILE 10
 #define END_OF_LINE 11
 #define END_OF_TOKEN 12
 #define NIL 13
 #define SUCCESS 14
 #define WRONG_NUMBER_FORMAT 15
-#define NEJAKA_KONSTANTA 16
-
+#define KONSTANT 16
+#define COMMENT 18
+#define COMMENT_END 18
 
 #define DEF 20
 #define DO 21
@@ -55,7 +50,6 @@ void set_token(int type, char *attribute);
 #define STATE_ID_KW 41
 #define STATE_INT 42
 #define STATE_COMMENT 43
-
 
 #define TYPE_KEYWORD 50
 #define TYPE_IDENTIFIER 51

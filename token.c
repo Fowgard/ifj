@@ -34,6 +34,18 @@ void lexem_putchar(lexem_t *lexem, char symbol)
 	lexem->word[lexem->lenght+1] = '\0';
 }
 
+void lexem_del_word(lexem_t *lexem)
+{
+	lexem->lenght = 0;
+	lexem->word = realloc(lexem->word, (lexem->lenght+1)*sizeof(char));
+	if (lexem->word == NULL)
+	{
+		fprintf(stderr, "nepodarilo se realokovat lexem");
+		exit(99);
+	}
+	lexem->word[lexem->lenght+1] = '\0';
+}
+
 
 
 void token_init(token_t *token)
@@ -70,6 +82,10 @@ int keyword_check(token_t *token, lexem_t *lexem)
 		token->type = THEN;
 	else if (!strcmp(lexem->word, "while"))
 		token->type = WHILE;
+	else if (!strcmp(lexem->word, "=begin"))
+		token->type = COMMENT;
+	else if (!strcmp(lexem->word, "=end"))
+		token->type = COMMENT_END;
 	else
 		token->type = TYPE_IDENTIFIER;
 

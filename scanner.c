@@ -4,6 +4,8 @@
 
 
 FILE *source_file;
+
+int BLOCK_COMMENT = FALSE;
  
 
 void print_file()
@@ -24,7 +26,6 @@ void set_source_file(FILE *f)
 	source_file = f;
 }
 
-
 int get_token(token_t *token)
 {
 	lexem_t *lexem = malloc(sizeof (lexem_t));
@@ -34,7 +35,54 @@ int get_token(token_t *token)
 	while(state != END_OF_TOKEN)
 	{
 		symbol = fgetc(source_file);//nacteni jednoho symbolu(pismene)
-		
+		if (symbol == '\n')
+		{
+			char tmp_symbol = fgetc(source_file);
+			if (tmp_symbol == '=')
+			{
+				int comment = 1;
+				lexem_t *lexem_com = malloc(sizeof (lexem_t));
+				lexem_init(lexem_com);
+				while (!isspace(tmp_symbol) || tmp_symbol == EOF)
+				{
+					lexem_putchar(lexem_com, tmp_symbol);
+					tmp_symbol = fgetc(source_file);
+				}
+				if (!strcmp(lexem_com->word,"=begin"))
+				{
+					lexem_del_word(lexem_com);
+					while(comment)
+					{
+						while((tmp_symbol = fgetc(source_file)) != '\n' && tmp_symbol != EOF);
+						
+
+						if(tmp_symbol == EOF)//SPRAVNE UKONCIT
+							exit(0);
+
+						tmp_symbol = fgetc(source_file);
+
+						if (tmp_symbol == '=')
+						{
+							while (!isspace(tmp_symbol) || tmp_symbol == EOF)
+							{
+								lexem_putchar(lexem_com, tmp_symbol);
+								tmp_symbol = fgetc(source_file);
+							}
+							if (!strcmp(lexem_com->word,"=end"))
+							{
+								comment = 0;
+								while((tmp_symbol = fgetc(source_file)) != '\n');
+							}
+						}
+					}
+				}
+				else
+					fprintf(stderr, "%s\n",lexem->word);
+			}
+			else
+				ungetc(tmp_symbol, source_file);
+		}
+
 		switch(state)
 		{
 			case STATE_START:	
@@ -66,16 +114,24 @@ int get_token(token_t *token)
 			//nacitani identifikatoru nebo klicoveho slova
 			case STATE_ID_KW:
 
-				if (isspace(symbol))//mezera => byl nacten cely token
+				if (isspace(symbol) || symbol == EOF)//mezera => byl nacten cely token
 				{
 					keyword_check(token, lexem); // musime resit jeste funkce T_T
-					if (symbol == EOF)
-						return END_OF_FILE;
+					
+					if (token->type == COMMENT)
+						BLOCK_COMMENT = TRUE;
+					if(BLOCK_COMMENT)
+					{
+						if (token->type == COMMENT_END)
+							BLOCK_COMMENT = FALSE;
+						free(lexem);	
+					}
 					else
 					{
 						printf("%s \n", lexem->word);
 						return SUCCESS;
 					}
+					
 				}
 				else
 				{
@@ -132,6 +188,6 @@ int get_token(token_t *token)
 			break;
 		}		
 	}
-	return NEJAKA_KONSTANTA;
+	return KONSTANT;
 }
 
