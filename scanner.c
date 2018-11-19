@@ -90,7 +90,7 @@ int get_token(token_t *token)
 				//Pokud program dosel na konec souboru
 				if (symbol == EOF)
 				{
-					token->type = END_OF_FILE;
+					set_type(token, END_OF_FILE);
 					return END_OF_FILE;
 				}
 				//Pokud je znak pismeno nebo cislo
@@ -123,19 +123,11 @@ int get_token(token_t *token)
 				{
 					keyword_check(token, lexem); // musime resit jeste funkce T_T
 					
-					if (token->type == COMMENT)
-						BLOCK_COMMENT = TRUE;
-					if(BLOCK_COMMENT)
-					{
-						if (token->type == COMMENT_END)
-							BLOCK_COMMENT = FALSE;
-						free(lexem);	
-					}
-					else
-					{
-						printf("%s \n", lexem->word);
-						return SUCCESS;
-					}
+					//podle typu dalsi operace
+
+					printf("%s \n", lexem->word);
+					return SUCCESS;
+					
 					
 				}
 				else
