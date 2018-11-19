@@ -66,7 +66,17 @@ int keyword_check(token_t *token, lexem_t *lexem);
 #define STATE_ID_KW 41
 #define STATE_INT 42
 #define STATE_COMMENT 43
+#define STATE_BACKSLASH 44
+#define STATE_EQUALS 45
+#define STATE_LESSTHAN 46
+#define STATE_MORETHAN 47
 
 #define TYPE_KEYWORD 50
 #define TYPE_IDENTIFIER 51
 #define TYPE_INT 52
+
+#define PLUS 60
+#define MINUS 61
+#define DIV 62
+#define MUL 63
+#define EQUALS 64
