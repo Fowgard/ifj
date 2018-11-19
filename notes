@@ -1,0 +1,38 @@
+Ze zadani:
+	
+	case sensitive
+
+	
+
+
+
+
+nastavit vychozi soubor
+-hotovo;
+
+inicializovat tabulku symbolu(Hash tabulka), vyresit strukturu pro ukladani promenych, funkci apodobne
+
+
+inicializovat list instrukci(tri adresny kod?, primo kod ifj?)
+
+
+zavolat parser
+
+
+PARSER:
+	Zavolat scanner o prvni token
+
+Scanner:
+	Vytvorit uplny automat ktery vraci tokeny
+
+PARSER:
+	Podle nacteneho tokenu vybrat spravnou gramatiku(implementace jako zasobnikovy automat)
+	Implementovat zasobnik, nebo vyuzit rekurzi
+
+	Po spravnem nacteni instrukce vygenerovat
+	vymyslet reseni slozitych instrukci(vyrazy, funkce, apod)
+	
+
+
+
+	

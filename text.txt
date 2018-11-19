@@ -1,5 +1,11 @@
 prvni radek
 druhy radek 
+#KOMET
+
+=begindasd
+asd
+fagdgd
+=enddasd
 treti   
 ctvrty   
 #tohle je velice zajimavy komentar

@@ -13,12 +13,13 @@ int main(int argc, char *argv[])
 
 	FILE *source_file;
 
-	if (argc != 2) 		
+	/*
+	if (argc != 2)
 	{
 		fprintf(stderr, "Nesparvny pocet argumentu.\n");
 		exit(FILE_ERROR);
 	}
-	
+	*/
 	if ((source_file = fopen(argv[1], "r")) == NULL)
 	{	
 		fprintf(stderr, "Nepodarilo se otevrit soubor.\n");
@@ -41,8 +42,15 @@ int main(int argc, char *argv[])
 		exit(99);
 	token_init(result);
 	
-
 	
+	//zatim v komentu, predchystane na finalni verzi, volani parse
+
+	/*
+	int resul = parse;
+	
+
+	*/
+
 
 	
 	//zatim 1 v podmince, neni implementovana hash table pro ulozeni tokenu
@@ -65,8 +73,8 @@ int main(int argc, char *argv[])
 		*/
 
 	}
-	
 
+	
 	
 	fclose(source_file);
 	return 0;

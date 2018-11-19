@@ -35,6 +35,7 @@ int get_token(token_t *token)
 	while(state != END_OF_TOKEN)
 	{
 		symbol = fgetc(source_file);//nacteni jednoho symbolu(pismene)
+		//blokovy komentar
 		if (symbol == '\n')
 		{
 			char tmp_symbol = fgetc(source_file);
@@ -77,7 +78,7 @@ int get_token(token_t *token)
 					}
 				}
 				else
-					fprintf(stderr, "%s\n",lexem->word);
+					fprintf(stderr, "ERROR: %s\n",lexem->word);
 			}
 			else
 				ungetc(tmp_symbol, source_file);
@@ -88,7 +89,10 @@ int get_token(token_t *token)
 			case STATE_START:	
 				//Pokud program dosel na konec souboru
 				if (symbol == EOF)
+				{
+					token->type = END_OF_FILE;
 					return END_OF_FILE;
+				}
 				//Pokud je znak pismeno nebo cislo
 				else if(isalnum(symbol))
 				{
@@ -112,6 +116,7 @@ int get_token(token_t *token)
 				//TODO "" uvozovky => literal(if (token->lexem[0] == "\"))
 			break;
 			//nacitani identifikatoru nebo klicoveho slova
+			
 			case STATE_ID_KW:
 
 				if (isspace(symbol) || symbol == EOF)//mezera => byl nacten cely token

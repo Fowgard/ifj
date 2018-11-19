@@ -2,12 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-
-typedef struct Token {
-  	int *attribute;// TODO implementovat hash table
-   	int type;
-} token_t;  
+  
 
 
 typedef struct Lexem {
@@ -16,10 +11,31 @@ typedef struct Lexem {
 } lexem_t;
 
 
+typedef union //union smi mit pouze jednu z hodnot
+{
+	int integer;//hodnota kdyy je int
+	double decimal;
+	lexem_t string;//hodnota kdyz je string
+	int keyword;//konstanta pro keyword
+	int nil;//bool hodnota(je nebo neni to nil)
+	
+} attribute_t;
+
+
+typedef struct Token {
+   	int type;
+  	attribute_t attribute;
+} token_t;
+
 void token_init(token_t *token);
 void lexem_init(lexem_t *lexem);
 void lexem_putchar(lexem_t *lexem, char symbol);
 void set_token(int type, char *attribute);
+void lexem_init(lexem_t *lexem);
+void lexem_putchar(lexem_t *lexem, char symbol);
+void set_type(token_t *token, int type);
+int keyword_check(token_t *token, lexem_t *lexem);
+
 
 #define FALSE 0
 #define TRUE 1
