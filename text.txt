@@ -2,11 +2,14 @@ prvni radek
 druhy radek 
 #KOMET
 
-=begindasd
+ as   =ddd
+
+=begin ndasd
 asd
 fagdgd
-=enddasd
+=end 	dasd
 treti   
 ctvrty   
 #tohle je velice zajimavy komentar
 
+  

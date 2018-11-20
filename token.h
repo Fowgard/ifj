@@ -69,7 +69,7 @@ int keyword_check(token_t *token, lexem_t *lexem);
 #define STATE_EQUALS 44 // = nevime jestli bude pokracovat druhe rovna se
 #define STATE_LESSTHAN 45 // <
 #define STATE_MORETHAN 46 // >
-#define STATE_EXCLAM 47 // !
+#define STATE_EXCLAMATION 47 // !
 #define STATE_STRING_LITERAL 48
 
 
@@ -86,3 +86,5 @@ int keyword_check(token_t *token, lexem_t *lexem);
 #define LEFT_BRACKET 66 // (
 #define RIGHT_BRACKET 67 // )
 #define COMPARE 68 // ==
+#define LOE 69 // <=
+#define LESSTHAN 70 // <

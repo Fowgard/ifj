@@ -53,7 +53,7 @@ void token_init(token_t *token)
 
 	//token->attribute = NULL; TODO implementovat hash table
 	token->type = 0;
-	token->attribute = NULL;
+	//token->attribute = NULL;
 
 }
 

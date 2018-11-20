@@ -120,33 +120,33 @@ int get_token(token_t *token)
 			case STATE_START:	
 				if (symbol == EOF)
 				{
-					set_type(token, END_OF_FILE);
+					token->type = END_OF_FILE;
 					return END_OF_FILE;
 				}
 				
 				else if(symbol == '\n')
 				{
-					set_type(token, END_OF_LINE);
+					token->type =END_OF_LINE;
 					return END_OF_LINE;
 				}
 				else if(symbol == '+')
 				{
-					set_type(token, PLUS);
+					token->type = PLUS;
 					return SUCCESS;
 				}
 				else if(symbol == '-')
 				{
-					set_type(token, MINUS);
+					token->type = MINUS;
 					return SUCCESS;
 				}
 				else if(symbol == '*')
 				{
-					set_type(token, MUL);
+					token->type = MUL;
 					return SUCCESS;
 				}
 				else if(symbol == '/')
 				{
-					set_type(token, DIV);
+					token->type = DIV;
 					return SUCCESS;
 				}
 				else if(symbol == '=')
@@ -167,17 +167,17 @@ int get_token(token_t *token)
 				}
 				else if(symbol == ',')
 				{
-					set_type(token, COMMA);
+					token->type = COMMA;
 					return SUCCESS;
 				}				
 				else if(symbol == ')')
 				{
-					set_type(token, LEFT_BRACKET);
+					token->type = LEFT_BRACKET;
 					return SUCCESS;
 				}
 				else if(symbol == '(')
 				{
-					set_type(token, RIGHT_BRACKET);
+					token->type = RIGHT_BRACKET;
 					return SUCCESS;
 				}
 
@@ -202,7 +202,7 @@ int get_token(token_t *token)
 					state = STATE_NUMBER;
 					lexem_putchar(lexem, symbol);//TODO ted nebo potom?
 				}
-				else if (symbol == "\"")
+				else if (symbol == '\"')
 				{
 					state = STATE_STRING_LITERAL;//TODO case
 				}
@@ -221,14 +221,30 @@ int get_token(token_t *token)
 				}
 				else 
 				{
-					set_type(token, EQUALS);
-					return SUCCES;
+					token->type = EQUALS;
+					ungetc(symbol, source_file);
+					return SUCCESS;
 				}
-
-
 			break;
 
-
+			case STATE_LESSTHAN:
+				if(symbol == '=')
+				{
+					token->type = LOE;//less or equal
+					return SUCCESS;
+				}
+				else if(symbol == EOF || symbol == '\n')
+				{
+					//chyba, spravne ukoncit
+					exit(0);
+				}
+				else
+				{
+					token->type = LESSTHAN;
+					ungetc(symbol, source_file);
+					return SUCCESS;
+				}
+			break;
 			
 			
 			case STATE_ID_KW:
