@@ -118,7 +118,6 @@ int get_token(token_t *token)
 		switch(state)
 		{
 			case STATE_START:	
-				//Pokud program dosel na konec souboru
 				if (symbol == EOF)
 				{
 					set_type(token, END_OF_FILE);
@@ -129,10 +128,6 @@ int get_token(token_t *token)
 				{
 					set_type(token, END_OF_LINE);
 					return END_OF_LINE;
-				}
-				else if(symbol == '\\')
-				{
-					state = STATE_BACKSLASH;//TODO(dodelat case)
 				}
 				else if(symbol == '+')
 				{
@@ -156,7 +151,7 @@ int get_token(token_t *token)
 				}
 				else if(symbol == '=')
 				{
-					state = STATE_EQUALS;//TODO(dodelat case)
+					state = STATE_EQUALS;
 				}
 				else if(symbol == '<')
 				{
@@ -166,7 +161,25 @@ int get_token(token_t *token)
 				{
 					state = STATE_MORETHAN;//TODO(dodelat case)
 				}
-				
+				else if(symbol == '!')
+				{
+					state = STATE_EXCLAMATION;//TODO(dodelat case)
+				}
+				else if(symbol == ',')
+				{
+					set_type(token, COMMA);
+					return SUCCESS;
+				}				
+				else if(symbol == ')')
+				{
+					set_type(token, LEFT_BRACKET);
+					return SUCCESS;
+				}
+				else if(symbol == '(')
+				{
+					set_type(token, RIGHT_BRACKET);
+					return SUCCESS;
+				}
 
 
 
@@ -179,28 +192,44 @@ int get_token(token_t *token)
 					state = STATE_START;
 				
 
-				//Pokud je znak pismeno nebo cislo
-				else if(isalnum(symbol))
+				else if (isalpha(symbol) || symbol == '_')//TODO co delat s velkymi pismeny?
 				{
-					//Pokud je symbol pismeno, zmen stav na identifikator / klicove slovo
-					if(isalpha(symbol))
-					{
-						state = STATE_ID_KW;
-						lexem_putchar(lexem, symbol);
-					}
-					//Pokud je symbol cislo, zmen stav na cislo
-					else if(isdigit(symbol))
-					{
-						state = STATE_INT;
-						set_type(token, TYPE_INT);//Pridat symbol k lexemu a nastavy typ					
-						lexem_putchar(lexem, symbol);
-					}
+					state = STATE_ID_KW;
+					lexem_putchar(lexem, symbol);//TODO ted nebo potom?
 				}
-				//Pokud je znak komentar
-				
-				//TODO "" uvozovky => literal(if (token->lexem[0] == "\"))
+				else if (isdigit(symbol))
+				{
+					state = STATE_NUMBER;
+					lexem_putchar(lexem, symbol);//TODO ted nebo potom?
+				}
+				else if (symbol == "\"")
+				{
+					state = STATE_STRING_LITERAL;//TODO case
+				}
 			break;
-			//nacitani identifikatoru nebo klicoveho slova
+
+			case STATE_EQUALS:
+				if(symbol == '=')
+				{
+					set_type(token, COMPARE);
+					return SUCCESS;
+				}
+				else if(symbol == EOF || symbol == '\n')
+				{
+					//chyba, spravne ukoncit
+					exit(0);
+				}
+				else 
+				{
+					set_type(token, EQUALS);
+					return SUCCES;
+				}
+
+
+			break;
+
+
+			
 			
 			case STATE_ID_KW:
 
@@ -226,7 +255,7 @@ int get_token(token_t *token)
 				}
 			break;
 			//nacitani cisla
-			case STATE_INT:
+			case STATE_NUMBER:
 				if (isspace(symbol))//mezera => byl nacten cely token
 				{
 					//set_type(TYPE_INT, lexem);
