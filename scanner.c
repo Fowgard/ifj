@@ -155,15 +155,15 @@ int get_token(token_t *token)
 				}
 				else if(symbol == '<')
 				{
-					state = STATE_LESSTHAN;//TODO(dodelat case)
+					state = STATE_LESSTHAN;
 				}
 				else if(symbol == '>')
 				{
-					state = STATE_MORETHAN;//TODO(dodelat case)
+					state = STATE_MORETHAN;
 				}
 				else if(symbol == '!')
 				{
-					state = STATE_EXCLAMATION;//TODO(dodelat case)
+					state = STATE_EXCLAMATION;
 				}
 				else if(symbol == ',')
 				{
@@ -191,16 +191,17 @@ int get_token(token_t *token)
 				else if(isspace(symbol))
 					state = STATE_START;
 				
+				
 
 				else if (isalpha(symbol) || symbol == '_')//TODO co delat s velkymi pismeny?
 				{
 					state = STATE_ID_KW;
-					lexem_putchar(lexem, symbol);//TODO ted nebo potom?
+					lexem_putchar(lexem, symbol);
 				}
 				else if (isdigit(symbol))
 				{
 					state = STATE_NUMBER;
-					lexem_putchar(lexem, symbol);//TODO ted nebo potom?
+					lexem_putchar(lexem, symbol);
 				}
 				else if (symbol == '\"')
 				{
@@ -211,13 +212,8 @@ int get_token(token_t *token)
 			case STATE_EQUALS:
 				if(symbol == '=')
 				{
-					set_type(token, COMPARE);
+					token->type = COMPARE;
 					return SUCCESS;
-				}
-				else if(symbol == EOF || symbol == '\n')
-				{
-					//chyba, spravne ukoncit
-					exit(0);
 				}
 				else 
 				{
@@ -233,11 +229,6 @@ int get_token(token_t *token)
 					token->type = LOE;//less or equal
 					return SUCCESS;
 				}
-				else if(symbol == EOF || symbol == '\n')
-				{
-					//chyba, spravne ukoncit
-					exit(0);
-				}
 				else
 				{
 					token->type = LESSTHAN;
@@ -245,36 +236,58 @@ int get_token(token_t *token)
 					return SUCCESS;
 				}
 			break;
+
+			case STATE_MORETHAN:
+				if(symbol == '=')
+				{
+					token->type = MOE;//more or equal
+					return SUCCESS;
+				}
+				else 
+				{
+					token->type = MORETHAN;
+					ungetc(symbol, source_file);
+					return SUCCESS;
+				}
+			break;
+
+			case STATE_EXCLAMATION:
+				if(symbol == '=')
+				{
+					token->type = NOTEQUAL;
+					return SUCCESS;
+				}
+				else
+				{
+					//spravne ukoncit
+				}
+			break;
 			
 			
 			case STATE_ID_KW:
 
-				if (isspace(symbol) || symbol == EOF)//mezera => byl nacten cely token
+				if(isalnum(symbol) || symbol == '_')
 				{
-					keyword_check(token, lexem); // musime resit jeste funkce T_T
-					
-					//podle typu dalsi operace
-
-					printf("%s \n", lexem->word);
-					return SUCCESS;
-					
-					
+					lexem_putchar(lexem, symbol);
 				}
 				else
 				{
-					if(isalnum(symbol)){
-						lexem_putchar(lexem, symbol);
-					//Pridej znak k lexemu						
-					}else{
-						//tady se osetri pripady kdy dalsi znak je napriklad +, / apod
-					}
+					ungetc(symbol, source_file);
+
+					keyword_check(token, lexem); // musime resit jeste funkce T_T
+					
+					token->attribute.string = *lexem;
+					//podle typu dalsi operace
+					printf("%s \n", lexem->word);
+					
+
+					return SUCCESS;
 				}
 			break;
 			//nacitani cisla
 			case STATE_NUMBER:
 				if (isspace(symbol))//mezera => byl nacten cely token
 				{
-					//set_type(TYPE_INT, lexem);
 					if (symbol == EOF)
 					{
 						return END_OF_FILE;

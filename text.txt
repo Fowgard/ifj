@@ -1,3 +1,8 @@
+def
+
+
+
+
 prvni radek
 druhy radek 
 #KOMET

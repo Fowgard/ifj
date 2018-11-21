@@ -88,3 +88,6 @@ int keyword_check(token_t *token, lexem_t *lexem);
 #define COMPARE 68 // ==
 #define LOE 69 // <=
 #define LESSTHAN 70 // <
+#define MOE 71 // >=
+#define MORETHAN 72 // >
+#define NOTEQUAL 73 // !=
