@@ -55,9 +55,12 @@ int main(int argc, char *argv[])
 	//zatim 1 v podmince, neni implementovana hash table pro ulozeni tokenu
 	while (get_token(result) != END_OF_FILE)//result->word != END_OF_FILE //TODO jeste doresit, nevieme jestli funguje, krajni situace
 	{
-		//printf("TYPE: %d\n",result->type);
-		//printf("LEXEM: %s\n",result->attribute.string.word);
-
+		/*
+		printf("TYPE: %d\n",result->type);
+		printf("LEXEM: %s\n",result->attribute.string.word);
+		if(result->type == TYPE_INT)
+			printf("MAIN CISLO: %d\n",result->attribute.integer);
+		*/
 		//ve scanner.c
 
 		//printf("%s\n",result->attribute);

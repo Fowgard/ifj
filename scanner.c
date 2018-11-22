@@ -277,42 +277,135 @@ int get_token(token_t *token)
 					keyword_check(token, lexem); // musime resit jeste funkce T_T
 					
 					token->attribute.string = *lexem;
-					//podle typu dalsi operace
 					printf("%s \n", lexem->word);
 					
 
 					return SUCCESS;
 				}
 			break;
-			//nacitani cisla
+
+
 			case STATE_NUMBER:
-				if (isspace(symbol))//mezera => byl nacten cely token
+				if(isdigit(symbol))
 				{
-					if (symbol == EOF)
-					{
-						return END_OF_FILE;
-					}else{
-						return SUCCESS;
-					}
+					lexem_putchar(lexem, symbol);
+				}
+				else if (symbol == '.'  )
+				{
+					lexem_putchar(lexem, symbol);
+					state = STATE_DECIMAL_DOT;
+				}
+				else if(symbol == 'e' || symbol == 'E')
+				{
+					lexem_putchar(lexem, symbol);
+					state = STATE_DECIMAL_E;
 				}
 				else
 				{
-					if(isalnum(symbol)){
-						//Pokud je symbol cislo, tak se prida ke stavajicimu lexemu
-						if(isdigit(symbol))
-						{
-							 //Pridej znak k lexemu	
-						}
-						//Pokud je symbol alfanumericky znak a neni cislo, vrat chybu - cislo nemuze byt spojeno s pismeny
-						else
-						{
-							return WRONG_NUMBER_FORMAT;
-						}											
-					}else{
-						//tady se osetri pripady kdy dalsi znak je napriklad +, / apod
-					}
+					char *ptr;
+					ungetc(symbol, source_file);
+					token->type = TYPE_INT;
+					token->attribute.integer = strtol(lexem->word, &ptr, 10);
+					
+					printf("CISLO: %d\n",token->attribute.integer);
+					return SUCCESS;
+				}
+
+
+			break;
+
+			case STATE_DECIMAL_DOT:
+				if(isdigit(symbol))
+				{
+					lexem_putchar(lexem, symbol);
+					state = STATE_DECIMAL;
+				}
+				else
+				{
+					//ukonceni
+					exit(0);
 				}
 			break;
+
+			case STATE_DECIMAL:
+				if(isdigit(symbol))
+				{
+					lexem_putchar(lexem, symbol);
+				}
+				else if(symbol == 'e' || symbol == 'E')
+				{
+					lexem_putchar(lexem, symbol);
+					state = STATE_DECIMAL_E;
+				}
+				else
+				{
+					ungetc(symbol, source_file);
+					token->type = TYPE_FLOAT;
+					
+					char *ptr;
+					token->attribute.decimal = strtof(lexem->word, &ptr );
+					
+					printf("DESETINNE CISLO: %f\n",token->attribute.decimal);
+					return SUCCESS;
+
+				}
+				
+					
+			break;
+
+			case STATE_DECIMAL_E:
+				if(isdigit(symbol))
+				{
+					lexem_putchar(lexem, symbol);
+					state = STATE_DECIMAL_END;
+				}
+				else if(symbol == '+' || symbol == '-')
+				{
+					lexem_putchar(lexem, symbol);
+					state = STATE_DECIMAL_E_SIGN;
+				}
+				else
+				{
+					//ukoncit
+					exit(0);
+				}
+			break;
+
+			case STATE_DECIMAL_E_SIGN:
+				if(isdigit(symbol))
+				{
+					lexem_putchar(lexem, symbol);
+					state = STATE_DECIMAL_END;
+				}
+				else
+				{
+					//ukoncit
+					exit(0);
+				}
+
+
+			break;
+
+			case STATE_DECIMAL_END:
+				if(isdigit(symbol))
+				{
+					lexem_putchar(lexem, symbol);
+				}
+				else
+				{
+					ungetc(symbol, source_file);
+					token->type = TYPE_FLOAT;
+					
+					char *ptr;
+					token->attribute.decimal = strtof(lexem->word, &ptr );
+					
+					printf("DESETINNE CISLO: %f\n",token->attribute.decimal);
+					return SUCCESS;
+				}
+
+
+			break;
+
 			// Pokud je symbol komentar
 			case STATE_COMMENT: 
 				if (symbol == EOF)

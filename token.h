@@ -71,11 +71,14 @@ int keyword_check(token_t *token, lexem_t *lexem);
 #define STATE_MORETHAN 46 // >
 #define STATE_EXCLAMATION 47 // !
 #define STATE_STRING_LITERAL 48
+#define STATE_DECIMAL 49
+#define STATE_DECIMAL_DOT 50
+#define STATE_DECIMAL_E 51
+#define STATE_DECIMAL_END 52
+#define STATE_DECIMAL_SIGN 53
+#define STATE_DECIMAL_E_SIGN 54
 
 
-#define TYPE_KEYWORD 50
-#define TYPE_IDENTIFIER 51
-#define TYPE_INT 52
 
 #define PLUS 60 // +
 #define MINUS 61 // -
@@ -91,3 +94,9 @@ int keyword_check(token_t *token, lexem_t *lexem);
 #define MOE 71 // >=
 #define MORETHAN 72 // >
 #define NOTEQUAL 73 // !=
+
+
+#define TYPE_KEYWORD 80
+#define TYPE_IDENTIFIER 81
+#define TYPE_INT 82
+#define TYPE_FLOAT 83
