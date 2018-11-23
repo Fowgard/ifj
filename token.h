@@ -77,7 +77,9 @@ int keyword_check(token_t *token, lexem_t *lexem);
 #define STATE_DECIMAL_END 52
 #define STATE_DECIMAL_SIGN 53
 #define STATE_DECIMAL_E_SIGN 54
-
+#define STATE_ESCAPE_SEQUENCE 55
+#define STATE_HEXADECIMAL 56
+#define STATE_HEXADECIMAL_SECOND 57
 
 
 #define PLUS 60 // +
@@ -100,3 +102,4 @@ int keyword_check(token_t *token, lexem_t *lexem);
 #define TYPE_IDENTIFIER 81
 #define TYPE_INT 82
 #define TYPE_FLOAT 83
+#define TYPE_STRING 84

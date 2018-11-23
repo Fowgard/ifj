@@ -36,6 +36,7 @@ int get_token(token_t *token)
 	lexem_init(lexem);
 	int state = STATE_START;//vychozi stav automatu
 	char symbol; //Zde uchovavame vzdy dalsi nacteny znak z prekladaneho souboru
+	char hex_value[2];
 	while(state != END_OF_TOKEN)
 	{
 		symbol = fgetc(source_file);//nacteni jednoho symbolu(pismene)
@@ -205,7 +206,7 @@ int get_token(token_t *token)
 				}
 				else if (symbol == '\"')
 				{
-					state = STATE_STRING_LITERAL;//TODO case
+					state = STATE_STRING_LITERAL;
 				}
 			break;
 
@@ -402,9 +403,112 @@ int get_token(token_t *token)
 					printf("DESETINNE CISLO: %f\n",token->attribute.decimal);
 					return SUCCESS;
 				}
+			break;
+
+			case STATE_STRING_LITERAL:
+				if(symbol == '\"')
+				{
+					token->type = TYPE_STRING;
+					token->attribute.string.word = lexem->word;
+					printf("LITERAL: %s\n", token->attribute.string.word);
+					return SUCCESS;
+				}
+				else if(symbol == '\\')
+				{
+					state = STATE_ESCAPE_SEQUENCE;
+				}
+				else if(symbol < 32)
+				{
+					//ukoncit
+					exit(0);
+				}
+				else
+				{
+					lexem_putchar(lexem, symbol);
+				}
 
 
 			break;
+
+			case STATE_ESCAPE_SEQUENCE:
+				if(symbol == '\"')
+				{
+					symbol = '\"';
+					lexem_putchar(lexem, symbol);
+					state = STATE_STRING_LITERAL;
+				}					
+				else if(symbol == 'n')
+				{
+					symbol = '\n';
+					lexem_putchar(lexem, symbol);
+					state = STATE_STRING_LITERAL;
+				}
+				else if(symbol == 't')
+				{
+					symbol = '\t';
+					lexem_putchar(lexem, symbol);
+					state = STATE_STRING_LITERAL;
+				}
+				else if(symbol == 's')
+				{
+					symbol = ' ';
+					lexem_putchar(lexem, symbol);
+					state = STATE_STRING_LITERAL;
+				}
+				else if(symbol == '\\')
+				{
+					symbol = '\\';
+					lexem_putchar(lexem, symbol);
+					state = STATE_STRING_LITERAL;
+				}	
+				else if(symbol == 'x')
+				{
+					state = STATE_HEXADECIMAL;
+				}
+				else
+				{
+					//ukoncit
+					exit(0);
+				}
+
+
+			break;
+
+			case STATE_HEXADECIMAL:
+
+				//48 az 57 0-9, 97 az 102 a-f, 65 az 70 A-F
+				if((symbol > 47 && symbol < 58) ||(symbol > 96 && symbol < 103)||(symbol > 64 && symbol < 71))
+				{
+					hex_value[0] = symbol;
+					state = STATE_HEXADECIMAL_SECOND;
+				}
+				else
+				{
+					//ukoncit
+					exit(0);
+				}
+
+			break;
+
+			case STATE_HEXADECIMAL_SECOND:
+				//48 az 57 0-9, 97 az 102 a-f, 65 az 70 A-F
+				if((symbol > 47 && symbol < 58) ||(symbol > 96 && symbol < 103)||(symbol > 64 && symbol < 71))
+				{
+					char *endptr;
+					hex_value[1] = symbol;
+					lexem_putchar(lexem, (char)strtol(hex_value, &endptr, 10));
+					state = STATE_STRING_LITERAL;
+				}
+				else
+				{
+					char *endptr;
+					ungetc(symbol, source_file);
+					lexem_putchar(lexem, (char)strtol(hex_value, &endptr, 10));
+					state = STATE_STRING_LITERAL;
+				}
+
+			break;
+			
 
 			// Pokud je symbol komentar
 			case STATE_COMMENT: 
