@@ -20,6 +20,11 @@ sadfsd
 2e2
 
  "\x65"
+ "\x66"
+
+ "\x29 "
+
+ "Ahoj\nSve'te\s\\\x22"
 
  begin
  x

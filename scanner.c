@@ -479,6 +479,7 @@ int get_token(token_t *token)
 				//48 az 57 0-9, 97 az 102 a-f, 65 az 70 A-F
 				if((symbol > 47 && symbol < 58) ||(symbol > 96 && symbol < 103)||(symbol > 64 && symbol < 71))
 				{
+					printf("SYM1: %c \n", symbol);
 					hex_value[0] = symbol;
 					state = STATE_HEXADECIMAL_SECOND;
 				}
@@ -494,16 +495,21 @@ int get_token(token_t *token)
 				//48 az 57 0-9, 97 az 102 a-f, 65 az 70 A-F
 				if((symbol > 47 && symbol < 58) ||(symbol > 96 && symbol < 103)||(symbol > 64 && symbol < 71))
 				{
+
 					char *endptr;
 					hex_value[1] = symbol;
-					lexem_putchar(lexem, (char)strtol(hex_value, &endptr, 10));
+					int value = (int) strtol(hex_value, &endptr, 16);
+					symbol = (char) value;
+					lexem_putchar(lexem, symbol);
 					state = STATE_STRING_LITERAL;
 				}
 				else
 				{
 					char *endptr;
 					ungetc(symbol, source_file);
-					lexem_putchar(lexem, (char)strtol(hex_value, &endptr, 10));
+					int value = (int) strtol(hex_value, &endptr, 16);
+					symbol = (char) value;
+					lexem_putchar(lexem, symbol);
 					state = STATE_STRING_LITERAL;
 				}
 
