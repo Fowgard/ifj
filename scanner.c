@@ -28,11 +28,13 @@ void set_source_file(FILE *f)
 
 int get_token(token_t *token)
 {
+
 	lexem_t *lexem = malloc(sizeof (lexem_t));
 	if(lexem == NULL)
 	{
 		//funkce pro ukoncovani
 	}
+	
 	lexem_init(lexem);
 	int state = STATE_START;//vychozi stav automatu
 	char symbol; //Zde uchovavame vzdy dalsi nacteny znak z prekladaneho souboru

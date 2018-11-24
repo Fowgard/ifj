@@ -35,6 +35,10 @@ void lexem_init(lexem_t *lexem);
 void lexem_putchar(lexem_t *lexem, char symbol);
 void set_type(token_t *token, int type);
 int keyword_check(token_t *token, lexem_t *lexem);
+void lexem_putstr(lexem_t *lexem, const char *str);
+void lexem_del_word(lexem_t *lexem);
+
+
 
 
 #define FALSE 0

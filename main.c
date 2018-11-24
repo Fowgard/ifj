@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "scanner.h"
 #include "symtable.h"
+#include "generator.h"
 
 
 #define FILE_ERROR 5
@@ -49,7 +50,7 @@ int main(int argc, char *argv[])
 	
 	
 	*/
-	
+	generator_init();
 	//zatim 1 v podmince, neni implementovana hash table pro ulozeni tokenu
 	while (get_token(result) != END_OF_FILE)//result->word != END_OF_FILE //TODO jeste doresit, nevieme jestli funguje, krajni situace
 	{
