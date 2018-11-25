@@ -1,55 +1,60 @@
+#include "parser.h"
 
 int token_type; //aktualni token
 char token_attribute; //atribut aktualniho tokenu
-token_t token;
-
-int parse()
-{
-	DTree_t *d_tree;
-	DTreeInit(d_tree);
-
-
-	token_t *tok;
-	while(se_mi_chce){
-
-		int succes = get_token(tok);
-		if(succes){
-			DTreeInsert(d_tree,tok);
-		}
-	}
-	
-
-
-}
+token_t *token;
 
 // simulace pravidla <program> -> <st-list>
 int program(){
 
-	SET_TOKEN();
+	int res;
 
-	switch(token_type):
+	printf("JSEM V PROGR\n");
+	SET_TOKEN();
+	switch(token_type){
 		//<program> -> <ID> <st-list>
 		case TYPE_INT:
 		case TYPE_FLOAT:
-			math_until_EOL();
+			res = math_until_EOL();
+			if(is_err(res) != NO_ERROR){
+				//ZPRACUJ CHYBU UUUUUUUUUUUUUUUUUUUUUUUUUU
+
+				printf("A kurnik\n");
+			}else{
+				printf("JUpíííííí\n");
+			}
+
+	}
 			
 
 }
 
-void SET_TOKEN(){
-	get_token(*token);
-	token_type = token->type;
+int SET_TOKEN(){
+	printf("SET TOKEN ZACATEK\n");
+	get_token(&token);
+	printf("SET TOKEN U KONCE\n");
+	token_type = &token->type;
+	printf("TOKEN TYPE: %d\n", token_type);
+	return token_type;
 }
 
 int math_until_EOL(){
 
 	int result;
-	switch(token):
+	switch(token_type){
 		case PLUS:
 		case MINUS:
 		case DIV:
 		case MUL:
-			SET_TOKEN();
+			if(SET_TOKEN() == END_OF_LINE){
+				if(!is_num()){
+					result = ERROR_4;
+					return result;
+				}else{
+					result = NO_ERROR;
+					return result;
+				}
+			}
 			if(!is_num()){
 				result = ERROR_4;
 				return result;
@@ -61,7 +66,11 @@ int math_until_EOL(){
 		break;
 		case TYPE_INT:
 		case TYPE_FLOAT:
-			SET_TOKEN();
+			if(SET_TOKEN() == END_OF_LINE){
+				result = NO_ERROR;
+				return result;
+			}
+
 			if(!is_operand()){
 				result = ERROR_4;
 				return result;
@@ -70,10 +79,11 @@ int math_until_EOL(){
 				return result;
 			}
 		break;
+	}
 
 }
 int is_err(int ret){
-	switch(ret):
+	switch(ret){
 		case ERROR_1:
 		case ERROR_2:
 		case ERROR_3:
@@ -85,6 +95,7 @@ int is_err(int ret){
 			return ret;
 		default:
 			return NO_ERROR;
+	}
 }
 bool is_operand(){
 	return ((token_type >= PLUS && token_type <= MUL)||(token_type >= COMPARE && token_type <= NOTEQUAL));

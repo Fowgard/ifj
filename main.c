@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "scanner.h"
+//#include "parser.h"
 #include "symtable.h"
 #include "generator.h"
 
@@ -9,7 +10,6 @@
 
 int main(int argc, char *argv[])
 {
-
 
 	FILE *source_file;
 
@@ -51,6 +51,9 @@ int main(int argc, char *argv[])
 	
 	*/
 	generator_init();
+	printf("ZACATEK\n");
+	program();
+	printf("KONEC\n");
 	//zatim 1 v podmince, neni implementovana hash table pro ulozeni tokenu
 	while (get_token(result) != END_OF_FILE)//result->word != END_OF_FILE //TODO jeste doresit, nevieme jestli funguje, krajni situace
 	{
