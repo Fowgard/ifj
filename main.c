@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "scanner.h"
-#include "parser.h"
-#include "stack.h"
+
 #include "symtable.h"
 #include "generator.h"
+//#include "stack.h"
+//#include "parser.h"
 
 
 #define FILE_ERROR 5

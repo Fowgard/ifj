@@ -1,19 +1,16 @@
 #include "parser.h"
-#include "stack.h"
-#include "token.h"
 
 int token_type; //aktualni token
 char token_attribute; //atribut aktualniho tokenu
 token_t *token;
-tStack *stack; //Zasobnik pro vyrazy
+tStack stack; //Zasobnik pro vyrazy
 int brackets_counter; //Leve zavorky ++, prave --
 // simulace pravidla <program> -> <st-list>
 int program(){
 	brackets_counter = 0;
-
+	SInit(&stack);
 	int res;
 
-	printf("JSEM V PROGR\n");
 	set_token_and_return();
 
 	switch(token_type){
@@ -22,15 +19,19 @@ int program(){
 			brackets_counter++;
 		case TYPE_INT:
 		case TYPE_FLOAT:	
-			Spush(token_type);
-			while(token_type == TYPE_INT  || token_type == TYPE_FLOAT || (token_type >=PLUS && token_type <= NOTEQUAL)){ //musí se dodělat že tam můžou byt proměné i funkce jako čísla 
+	printf("JSEM V PROGR\n");
+			
+			while(token_type == TYPE_INT  || token_type == TYPE_FLOAT || 
+					(token_type >=PLUS && token_type <= NOTEQUAL)){ //musí se dodělat že tam můžou byt proměné i funkce jako čísla 
 				/*if ( funkce,která vrací TYPE_FLOAT/TYPE_FLOAT || proměné TYPE_FLOAT nebo TYPE_INT ){
 					nastavíme token_type na to co vrací;
 				}*/
-				Spush(set_token_and_return());
+				//printf("PUSHUJI: %d\n", token_type);
+				SPush(&stack, token_type);
+				token_type = set_token_and_return();
 		
 			}
-			if(!is_num(pop_token()) || token_type != RIGHT_BRACKET){
+			if(!is_num(pop_token()) && token_type != RIGHT_BRACKET){
 				//ERROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOR
 				printf("Expr nekončí číslem ani závorkou\n");
 			}
@@ -57,17 +58,17 @@ int set_token_and_return(){
 }
 
 int pop_token(){
-	token_type = Spop(&stack);
+	token_type = SPop(&stack);
+	printf("POP_TOKEN: %d\n",token_type);
 	return token_type;
 }
 
 int math_until_EOL(){
-
 	int result;
 	switch(token_type){
 		case PLUS:
 		case MINUS:
-			if(sEmpty(stack)){
+			if(SEmpty(&stack)){
 				result = NO_ERROR;
 				return result;
 			}
@@ -83,13 +84,12 @@ int math_until_EOL(){
 
 		case DIV:
 		case MUL:
-			if(sEmpty(stack)){
+			if(SEmpty(&stack)){
 				result = ERROR_4;
 				return result;
 			}
 			
 			pop_token();
-
 			if(!is_num()){
 				result = ERROR_4;
 				return result;
@@ -101,7 +101,7 @@ int math_until_EOL(){
 		break;
 		case TYPE_INT:
 		case TYPE_FLOAT:
-			if(sEmpty(stack)){
+			if(SEmpty(&stack)){
 				result = NO_ERROR;
 				return result;
 			}

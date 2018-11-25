@@ -1,10 +1,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
+#include "stack.h"
+#include "token.h"
 
 #define TYPE_FUNCTION 85
 
 
-#define NO_ERROR 500
 #define NO_ERROR 500
 #define ERROR_1 501
 #define ERROR_2 502
