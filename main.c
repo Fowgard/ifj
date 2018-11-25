@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "scanner.h"
-//#include "parser.h"
+#include "parser.h"
+#include "stack.h"
 #include "symtable.h"
 #include "generator.h"
 

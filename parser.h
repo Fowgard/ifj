@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdbool.h>
-#include "token.h"
 
 #define TYPE_FUNCTION 85
 
@@ -19,7 +18,8 @@
 
 
 int program();
-int SET_TOKEN();
+int set_token_and_return();
+int pop_token();
 int math_until_EOL();
 int is_err(int ret);
 bool is_operand();

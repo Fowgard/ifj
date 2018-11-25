@@ -1,20 +1,39 @@
 #include "parser.h"
+#include "stack.h"
+#include "token.h"
 
 int token_type; //aktualni token
 char token_attribute; //atribut aktualniho tokenu
 token_t *token;
-
+tStack *stack; //Zasobnik pro vyrazy
+int brackets_counter; //Leve zavorky ++, prave --
 // simulace pravidla <program> -> <st-list>
 int program(){
+	brackets_counter = 0;
 
 	int res;
 
 	printf("JSEM V PROGR\n");
-	SET_TOKEN();
+	set_token_and_return();
+
 	switch(token_type){
-		//<program> -> <ID> <st-list>
+		//<program> -> <ID> <st-list>	
+		case LEFT_BRACKET:
+			brackets_counter++;
 		case TYPE_INT:
-		case TYPE_FLOAT:
+		case TYPE_FLOAT:	
+			Spush(token_type);
+			while(token_type == TYPE_INT  || token_type == TYPE_FLOAT || (token_type >=PLUS && token_type <= NOTEQUAL)){ //musí se dodělat že tam můžou byt proměné i funkce jako čísla 
+				/*if ( funkce,která vrací TYPE_FLOAT/TYPE_FLOAT || proměné TYPE_FLOAT nebo TYPE_INT ){
+					nastavíme token_type na to co vrací;
+				}*/
+				Spush(set_token_and_return());
+		
+			}
+			if(!is_num(pop_token()) || token_type != RIGHT_BRACKET){
+				//ERROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOR
+				printf("Expr nekončí číslem ani závorkou\n");
+			}
 			res = math_until_EOL();
 			if(is_err(res) != NO_ERROR){
 				//ZPRACUJ CHYBU UUUUUUUUUUUUUUUUUUUUUUUUUU
@@ -24,17 +43,21 @@ int program(){
 				printf("JUpíííííí\n");
 			}
 
+		break;
+
 	}
 			
 
 }
 
-int SET_TOKEN(){
-	printf("SET TOKEN ZACATEK\n");
+int set_token_and_return(){
 	get_token(&token);
-	printf("SET TOKEN U KONCE\n");
 	token_type = &token->type;
-	printf("TOKEN TYPE: %d\n", token_type);
+	return token_type;
+}
+
+int pop_token(){
+	token_type = Spop(&stack);
 	return token_type;
 }
 
@@ -44,17 +67,29 @@ int math_until_EOL(){
 	switch(token_type){
 		case PLUS:
 		case MINUS:
+			if(sEmpty(stack)){
+				result = NO_ERROR;
+				return result;
+			}
+			if(!is_num() || token_type != LEFT_BRACKET){
+				result = ERROR_4;
+				return result;
+			}
+			if(result == is_err(math_until_EOL())){
+				return result;
+			}
+
+		break;
+
 		case DIV:
 		case MUL:
-			if(SET_TOKEN() == END_OF_LINE){
-				if(!is_num()){
-					result = ERROR_4;
-					return result;
-				}else{
-					result = NO_ERROR;
-					return result;
-				}
+			if(sEmpty(stack)){
+				result = ERROR_4;
+				return result;
 			}
+			
+			pop_token();
+
 			if(!is_num()){
 				result = ERROR_4;
 				return result;
@@ -66,15 +101,18 @@ int math_until_EOL(){
 		break;
 		case TYPE_INT:
 		case TYPE_FLOAT:
-			if(SET_TOKEN() == END_OF_LINE){
+			if(sEmpty(stack)){
 				result = NO_ERROR;
 				return result;
 			}
+
+			pop_token();
 
 			if(!is_operand()){
 				result = ERROR_4;
 				return result;
 			}
+
 			if(result == is_err(math_until_EOL())){
 				return result;
 			}
