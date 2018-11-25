@@ -1,1 +1,14 @@
 .IFJcode18
+JUMP $$main
+
+# zacatek funkce: foo
+LABEL $foo
+PUSHFRAME
+POPFRAME
+RETURN
+
+# main:
+LABEL $$main
+CREATEFRAME
+PUSHFRAME
+
