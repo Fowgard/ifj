@@ -1,0 +1,95 @@
+1. Definice proměných: 
+	-Definuje se tak jenom že se napíše : např. když chci definovat proměnou "x" tak jenom napíše x. 
+	-Nelze definovat proměnnou stejného jména, jako má některá již definovaná funkce, a naopak nelze definovat funkce stejného jména jako některá již definovaná proměnná v hlavním těle programu. @jinak ERROR_3
+	-Inicializuje se automaticky implicitní hodnotou nil, dokud do ní něco nevložíš, potom se inicializuje na vkládaný výraz a podle něho se určí její typ.
+	-IFJ18 používá jenom lokální proměné 
+	-Proměnnou nelze použít před její definicí. @jinak ERROR_3
+
+2. Funkce
+
+	2.1 definice funkce:
+	#	def id ( parametr1, parametr2, ... paramtrn ) EOL //může být bez parametrů
+	#		sekvence_příkazů
+	#	end
+
+		-Nemusí být definovaná lexikálně před svým použitím // To nám to trochu zhorší bych řekl .. Ale dalo by se asi udělat to že při volaní si zapamatujeme tu funkci a dát k ní nějakej flag nebo tak něco, že ještě nebyla definována 
+		-"V těle funkce jsou její parametry chápány jako předdefinované lokální proměnné."
+		-Funkce "vrací" hodnotu naposledy vyhodnoceného příkazu těla funkce.
+
+	2.2 Volání funkce
+	# 	id = název_funkce(parametr1, parametr2, ...) //může být bez parametrů
+		
+		-Závorky kolem seznamu vstupních parametrů mohou být vynechány
+		-Musíme kontrolovat počet parametrů při definici a při volání. @jinak ERROR_5
+		-Část 'id =' lze vynechat pokud tam bude, zapíše se do ní hodnota funkce
+
+3. Příkazy:
+
+	3.1 Příkaz přiřazení:
+	#	id = výraz //id musí být proměná 
+
+		-Vyhodnocení výrazu -> přiřazení hodnoty do id -> id potom bude stejného typu jako výraz.
+		-Část 'id =' může být vynechána, výraz potom bude sloužit nejspíše jako návratová hodnota funkce.
+
+	3.2 Podmíněný příkaz:
+	#	if výraz then EOL
+	#		sekvence_příkazů1
+	#	else EOL
+	#		sekvence_příkazů2
+	#	end	
+
+		-Vyhodnocení výrazu -> pokud pravda sekvence_příkazů1, jinak sekvence_příkazů2 ( Jinak pokud to není bool tak se bere hodnota ( nil = false zbytek = true))
+		-Výsledkem příkazu je výsledek posledního provedeného příkazu z provedené sekvence příkazů. Je-li sekvence prázdná, je výsledek nil.
+
+	3.3 Příkaz přiřazení:
+	#	while výraz do EOL
+	#		sekvence_příkazů
+	#	end
+
+		-Obdobně jako v C dělá do te doby dokud je výraz true nebo se nerovná nil.
+		-Výsledek tohoto příkazu je vždy nil.
+
+4. Výrazy
+	- Výrazy jsou tvořeny termy, závorkami a binárními aritmetickými, řetězcovým a relačnímioperátory.
+	- Jde dělat implicitní konverze datových typů z Float na Integer a naopak.
+	@chybné kombinace datových typů, které jsme schopni ověřit u překladu ERROR_4 ( tady je to myšleno asi tak, že se můžou vyskytnout chybi i u generování nevím teda jaký ale píše se - "Ostatní typové kontroly generujte do mezikódu a při běhové chybě kvůli nekompatibilitě typů ukončete interpret s návratovým kódem 4.")
+
+	4.1 Aritmetické, řetězcové a relační operátory
+		-"+" speciálně pro string provadí konkatenaci.
+		-"+, -, *, /" float = float "+, -, *, /" integer || float =  integer "+, -, *, /" float || integer = integer "+, -, *, /" integer 
+		- pozn. u integer = integer "+, -, *, /" integer se jedná o celočíselné dělení
+		@při dělení nulou ERROR_9 
+		-"<, >, <=, >=, ==, !=" vrací pravdivostní hodnotu, jde porovnat Integer, Float nebo String. Pokud se porovnává integer a float tak se integer převede na float; u stringu se porovnání provádí lexikograficky.
+		-"==, !=" umožňuje porovnávat operandy různých typů ( včetně nil ), kdy, nedojde-li k implicitní konverzi mezi int a float je výsledek "false"
+		-Bez rozšíření BOOLOP není s výsledkem porovnání možné dále pracovat a lze	jej využít pouze u příkazů if a while.
+
+	4.2 Priority operátorů
+		- jde upravit závorkováním jinak:
+
+		Priorita:	|	Operátory	|	Asociativita
+		------------|---------------|---------------
+			1		|	*	/		|	levá
+			2		|	+	-		|	levá
+		  	3		|	< <= > >=	|	žádná
+		  	4		|	==	!=		|	žádná
+
+5. Vestavěné funkce
+	- u všech lze opět vynechávat závorky
+	- \n odřádkování jinak jeden znak
+
+#	print ( term1 , term2 , …, term𝑛 ) // musí mít aspoň jeden term
+	- %d pro výpis integer, %a pro float
+	- nil je vypsán jako prázdná řetězec
+	- vrací vždy hodnotu nil
+
+#	length(s) 
+	- Vrátí délku (počet znaků) řetězce zadaného jediným parametrem s.	Např. length("x\nz") vrací 3. 
+
+#	substr(s, i, n)
+	- Vrátí podřetězec zadaného řetězce 𝑠. Druhým parametrem 𝑖 je dán začátek požadovaného podřetězce (počítáno od nuly) a třetí parametr 𝑛 určuje délku podřetězce. Je-li index 𝑖 mimo meze 0 až length(s) nebo 𝑛 < 0, vrací funkce nil. Je-li 𝑛 > length(s)−𝑖, jsou jako řetězec vráceny od 𝑖-tého znaku všechny zbývající znaky řetězce 𝑠.
+
+#	ord(s, i)
+	-Vrátí ordinální hodnotu (ASCII) znaku na pozici 𝑖 v řetězci 𝑠. Je-li pozice mimo meze řetězce (0 až length(s) - 1), vrací nil.
+
+#	chr(i)
+	-Vrátí jednoznakový řetězec se znakem, jeho	ž ASCII kód je zadán parametrem	𝑖. Případ, kdy je 𝑖 mimo interval [0; 255], vede na běhovou chybu při práci s řetězcem.

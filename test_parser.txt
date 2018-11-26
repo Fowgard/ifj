@@ -1,1 +1,2 @@
-4* 4 4
+def nsse_funkce1 ( ahoj ) 
+end

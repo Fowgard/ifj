@@ -1,4 +1,3 @@
-
 #include "symtable.h"
 
 int HTSIZE = MAX_HTSIZE;

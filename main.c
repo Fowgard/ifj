@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "scanner.h"
+//#include "scanner.h"
 
 #include "symtable.h"
 #include "generator.h"
@@ -12,7 +12,6 @@
 
 int main(int argc, char *argv[])
 {
-
 	FILE *source_file;
 
 	/*

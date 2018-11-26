@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "stack.h"
-#include "token.h"
+//#include "token.h"
+#include "symtable.h"
 
 #define TYPE_FUNCTION 85
 
@@ -19,9 +20,11 @@
 
 
 int program();
+int rule_def();
+int rule_stat();
 int set_token_and_return();
 int pop_token();
-int math_until_EOL();
+int rule_expr();
 int is_err(int ret);
 bool is_operand();
 bool is_num();
