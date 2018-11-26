@@ -2,24 +2,72 @@
 #include "generator.h"
 
 //makra pro jednodussi pirdavani instrukci/kodu
-#define ADD_INST(inst) \
-	(generate_to_main == 1) ? lexem_putstr(code_main, (inst "\n")) : lexem_putstr(code_rest, (inst "\n"))
+#define CAT_INST(inst) \
+	(gen_to_main == 1) ? lexem_putstr(code_main, (inst "\n")) : lexem_putstr(code_rest, (inst "\n"))
 
 
-#define ADD_CODE(code_to_add) \
-	(generate_to_main == 1) ? lexem_putstr(code_main, (code_to_add)) : lexem_putstr(code_rest, (code_to_add))
+#define CAT_STR(code_to_add) \
+	(gen_to_main == 1) ? lexem_putstr(code_main, (code_to_add)) : lexem_putstr(code_rest, (code_to_add))
 
-
+#define CAT_NUM(num) \
+	do{ \
+		char buffer[310];	\
+		sprintf(buffer, "%d", num);	\
+		CAT_STR(buffer);\
+	}while(0) \
 
 lexem_t *code_main;
 lexem_t *code_rest;
 
 FILE *output_file;
-int generate_to_main;//zatim vse do main 
+int gen_to_main;//zatim vse do main 
 						//bude urcovat jestli generovat do mainu(jiny lexem) nebo do zbytku
+int c_while = 0;
 
+void gen_while_start(int condition)
+{
+	CAT_STR("LABEL START_W");
+	CAT_NUM(c_while++);
+	CAT_INST("");
 
+	CAT_INST("JUMPIFEQ");
+}
 
+/*void gen_while_end()
+{
+
+}*/
+
+void gen_frame_retvar()
+{
+	CAT_INST("CREATEFRAME");
+	CAT_INST("DEFVAR TF@!retvar");
+
+}
+
+void gen_inputi()
+{
+	gen_frame_retvar();
+	CAT_INST("READ TF@!retvar int");
+
+	CAT_INST("PUSHFRAME");
+	CAT_INST("RETURN");		
+}
+
+void gen_inputf()
+{
+	gen_frame_retvar();
+	CAT_INST("READ TF@!retvar float");
+	CAT_INST("PUSHFRAME");
+	CAT_INST("RETURN");		
+}
+void gen_inputs()
+{
+	gen_frame_retvar();
+	CAT_INST("READ TF@!retvar string");
+	CAT_INST("PUSHFRAME");
+	CAT_INST("RETURN");		
+}
 void print_output()
 {
 	fputs(code_rest->word, output_file);
@@ -43,7 +91,7 @@ void generator_init()
 		//funkce pro ukoncovani
 	}
 	lexem_init(code_main);	
-	generate_header();
+	gen_header();
 	
 	if ((output_file = fopen("output.txt", "w")) == NULL)
 	{	
@@ -59,63 +107,66 @@ void generator_init()
 void pomocna_docasna_funkce()
 {
 
-	generate_main_start();
-	generate_def_start("foo");
-	generate_def_end("foo");
+	gen_main_start();
+	gen_def_start("foo");
+	gen_def_end("foo");
 	print_output();
 }
 
-void generate_header()
+void gen_header()
 {
-	generate_to_main = 0;
+	gen_to_main = 0;
 	
-	ADD_INST(".IFJcode18");
-	ADD_INST("JUMP $$main");
+	CAT_INST(".IFJcode18");
+	CAT_INST("JUMP $$main");
 	
 }
 
-void generate_main_start()
+void gen_main_start()
 {
-	generate_to_main = 1;
-	ADD_INST(""); //prazdny radek
-	ADD_INST("# main:");
-	ADD_INST("LABEL $$main");
-	ADD_INST("CREATEFRAME");
-	ADD_INST("PUSHFRAME");
-	ADD_INST("");
+	gen_to_main = 1;
+	CAT_INST(""); //prazdny radek
+	CAT_INST("# main:");
+	CAT_INST("LABEL $$main");
+	CAT_INST("CREATEFRAME");
+	CAT_INST("PUSHFRAME");
+	CAT_INST("");
 }
 //mezi start a end se budou generovat ruzne dalsi instrukce
-void generate_main_end()
+void gen_main_end()
 {
-	generate_to_main = 1;
-	ADD_INST("");
-	ADD_INST("POPFRAME");// je potreba?
-	ADD_INST("CLEARS");
-	ADD_INST("EXIT 0");//  je potreba?
-	ADD_INST("");
+	gen_to_main = 1;
+	CAT_INST("");
+	CAT_INST("POPFRAME");// je potreba?
+	CAT_INST("CLEARS");
+	CAT_INST("EXIT 0");//  je potreba?
+	CAT_INST("");
 }
 
 
-void generate_def_start(char *f_name)
+void gen_def_start(char *f_name)
 {
-	generate_to_main = 0;
+	gen_to_main = 0;
 
-	ADD_INST("");
-	ADD_CODE("# zacatek funkce: "); 
-	ADD_CODE(f_name); 
-	ADD_INST("");
+	CAT_INST("");
+	CAT_STR("# zacatek funkce: "); 
+	CAT_STR(f_name); 
+	CAT_INST("");
 
-	ADD_CODE("LABEL $"); 
-	ADD_CODE(f_name);
-	ADD_INST("");
-	ADD_INST("PUSHFRAME");
+	CAT_STR("LABEL $"); 
+	CAT_STR(f_name);
+	CAT_INST("");
+	CAT_INST("PUSHFRAME");
 
 }
 
-void generate_def_end(char *f_name)
+void gen_def_end(char *f_name)
 {
-	//ADD_CODE("LABEL $"); ADD_CODE(function_id); ADD_CODE("%return\n"); na co?
-	ADD_INST("POPFRAME");
-	ADD_INST("RETURN");
+	//CAT_STR("LABEL $"); CAT_STR(function_id); CAT_STR("%return\n"); na co?
+	CAT_INST("POPFRAME");
+	CAT_INST("RETURN");
 }
+
+
+
 
