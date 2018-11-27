@@ -7,69 +7,93 @@ tStack stack; //Zasobnik pro vyrazy
 tHTable* h_tabulka; // Hashovaci tabulka
 int brackets_counter; //Leve zavorky ++, prave --
 int param_counter; //pocitadlo parametru pri definici funkce
-
+int porovnavani_counter;//pocitadlo >,<,<=,>=,==,!=
 bool already_init=false;//podmínka pro inicializaci parseru
+int uvnitr_funkce=0;//pro orientaci jestli jsme v definic funkce nebo ne 
 
 //int result; // Pouzivame pro ulozeni navratove hodnoty z funkce (Error nebo ne error :D )
 // simulace pravidla <program> -> <st-list>
 int program(){
-	if(!already_init)
+	if(!already_init){
 		init_parser();
-
-	int res;
-
+	}
+	int res; // vyhodnocovaní chyb pro parser
 	set_token_and_return();
-
 	switch(token_type){
 		//<program> -> <ID> <st-list>	
 		case LEFT_BRACKET:
 			brackets_counter++;
 		case TYPE_INT:
 		case TYPE_FLOAT:	
-			
 			while(token_type == TYPE_INT  || token_type == TYPE_FLOAT || 
 					(token_type >=PLUS && token_type <= NOTEQUAL)){ //musí se dodělat že tam můžou byt proměné i funkce jako čísla 
 				/*if ( funkce,která vrací TYPE_FLOAT/TYPE_FLOAT || proměné TYPE_FLOAT nebo TYPE_INT ){
 					nastavíme token_type na to co vrací;
 				}*/
-				//printf("PUSHUJI: %d\n", token_type);
 				SPush(&stack, token_type);
-				token_type = set_token_and_return();
-		
+				token_type = set_token_and_return();	
 			}
-			//printf("KONEC PUSHOVANI\n----------------------------:\n");
-			if(!is_num(pop_token()) && token_type != RIGHT_BRACKET){
-				printf("Expr nekončí číslem ani závorkou\n");
+
+			if(!is_num(pop_token()) && token_type != RIGHT_BRACKET){ //pokud vyraz nekončí zavorkou ani číslem
+				call_generator(ERROR_2);
 				return ERROR_2;
 			}
+			porovnavani_counter=0;
 			res = rule_expr();
-
 			if(is_err(res) != NO_ERROR){
 				call_generator(res);
 				return res;
 			}else{
+				printf("uvnitr_funkce%d\n", uvnitr_funkce);
 				call_generator(res);
 			}
-
 		break;
-
-		case DEF:	
-			rule_def();
-			res = rule_expr();
-			printf("jsem error ? %d\n", res);
+		case DEF:
+			uvnitr_funkce++;
+			if (uvnitr_funkce > 1){
+				call_generator(ERROR_2);
+				return ERROR_2;
+			}	
+			res = rule_def();
 			if(is_err(res) != NO_ERROR){
+				uvnitr_funkce--;
 				call_generator(res);
 				return res;
 			}else{
+				uvnitr_funkce--;
 				call_generator(res);
 			}
-
+		break; 
 		case END_OF_FILE:	
 			return NO_ERROR;
+		break;
+		case END_OF_LINE:
+			token_type = set_token_and_return();
+			res = program();
+			return res;
+		break;
+		case END:
+			printf("zakončil jsem funkci\n");
+			if(uvnitr_funkce==1){
+				set_token_and_return();
+				return NO_ERROR;
+			}
+			else{
+				return ERROR_2;
+			}
+		break;
+		/*case TYPE_IDENTIFIER:
+			res = rule_id();
+			if(is_err(res) != NO_ERROR){
+				call_generator(res);
+				return res;
+			}else{
+				call_generator(res);
+			}
+		break;*/
 
 	}
 	program();
-
 }
 
 void call_generator(int resu){
@@ -81,31 +105,34 @@ void call_generator(int resu){
 		printf("zavolam generator pro posledni radek \n");
 	}
 }
+int rule_id(){
+
+return NO_ERROR;
+
+
+}
 
 int rule_def(){
 	int result = NO_ERROR;
 	switch(token_type){
 		case DEF:
 			//printf("JSEM V DEF\n");
-
 			if(set_token_and_return() != TYPE_IDENTIFIER){
 				result = ERROR_2;
 				return result;
 			}
 			else{
 				tKey k = ((char*)token->attribute.string.word);
-				if(htRead(&h_tabulka,k) == NULL){//Pokud nebyla nalezena polozka, tak ji vloz
-					
-					if(result != is_err(rule_def())){
+				if(htRead(&h_tabulka,k) == NULL){//Pokud nebyla nalezena polozka, tak ji vloz	
+					result=rule_def();
+					if(is_err(result)!=NO_ERROR){
 						return result;
 					}
 					tData data; //data pro hashovací tabulku
 					data.type=param_counter;	
 					htInsert(&h_tabulka, k, data );
 					result = NO_ERROR;
-					printf("vracom no ERROR\n");
 					return result;
-
 				}else{					
 					result = ERROR_2;
 					return result;
@@ -113,7 +140,6 @@ int rule_def(){
 			}
 		break;
 		case TYPE_IDENTIFIER:
-			printf("stav zavorek %d\n", brackets_counter);
 			if (brackets_counter==0){
 				if(set_token_and_return() != LEFT_BRACKET){
 					result = ERROR_2;
@@ -121,13 +147,10 @@ int rule_def(){
 				}
 				else{
 					brackets_counter++;
-					if(result != is_err(rule_def())){
-						return result;
-					}
+					result=rule_def();
+					return result;
 				}
-
 			}
-
 			if (brackets_counter==1){
 				if(set_token_and_return() != COMMA && token_type != RIGHT_BRACKET){
 					result = ERROR_2;
@@ -140,10 +163,8 @@ int rule_def(){
 				else {
 					brackets_counter--;
 				}
-				if(result != is_err(rule_def())){
-					return result;
-				}
-
+				result=rule_def();
+				return result;
 			}
 			else{
 				result = ERROR_2;
@@ -151,25 +172,20 @@ int rule_def(){
 			}
 		break;
 		case LEFT_BRACKET:
-
 			if (brackets_counter==1){
 				if(set_token_and_return() != TYPE_IDENTIFIER){
 					result = ERROR_2;
 					return result;
 				}
 				else{
-					if(result != is_err(rule_def())){
-						return result;
-					}
-
+					result=rule_def();
+					return result;
 				}
-
 			}
 			else{
 				result = ERROR_2;
 				return result;
 			}
-
 		break;
 		case RIGHT_BRACKET:
 			if (brackets_counter==0){
@@ -177,10 +193,12 @@ int rule_def(){
 					result = ERROR_2;
 					return result;
 				}
+				printf("tady se zavola generator na generovani hlavičky funkce def nazev_funkce (param1, param2,....,paramN) \n");
 				set_token_and_return();
-				if(result != is_err(rule_stat())){
-					return result;
-				}
+				result=program();
+				printf("Uspěšné ukončení funkce, generuj end funkce\n");
+				return result;
+				
 
 			}
 			else{
@@ -194,30 +212,13 @@ int rule_def(){
 					result = ERROR_2;
 					return result;
 				}
-				if(result != is_err(rule_def())){
-					return result;
-				}
+				result=rule_def();
+				return result;
 			}
 			else{
 				result = ERROR_2;
 				return result;
 			}
-
-		break;
-
-
-
-	}
-
-
-}
-
-int rule_stat(){
-	switch(token_type){
-		case END:
-			return NO_ERROR;
-
-
 		break;
 	}
 }
@@ -244,42 +245,37 @@ int rule_expr(){
 				result = NO_ERROR;
 				return result;
 			}
-
 			pop_token();
-
 			if(!is_num() && token_type != LEFT_BRACKET){
 				result = ERROR_4;
 				return result;
 			}
-			if(result == is_err(rule_expr())){
-				return result;
-			}
-
+			result=rule_expr();
+			return result;
 		break;
-
-		case DIV:
-		case MUL:
 		case COMPARE:
 		case LOE:
 		case LESSTHAN:
 		case MOE:
 		case MORETHAN:
 		case NOTEQUAL:
+			porovnavani_counter++;
+		case DIV:
+		case MUL:
+			if (porovnavani_counter>1){
+				return ERROR_4;
+			}
 			if(SEmpty(&stack)){
 				result = ERROR_4;
 				return result;
 			}
-			
 			pop_token();
-
 			if(!is_num()){
 				result = ERROR_4;
 				return result;
 			}
-			if(result == is_err(rule_expr())){
-				return result;
-			}
-
+			result=rule_expr();
+			return result;
 		break;
 		case TYPE_INT:
 		case TYPE_FLOAT:
@@ -287,20 +283,15 @@ int rule_expr(){
 				result = NO_ERROR;
 				return result;
 			}
-
 			pop_token();
-
 			if(!is_operand()){
 				result = ERROR_4;
 				return result;
 			}
-
-			if(result == is_err(rule_expr())){
-				return result;
-			}
+			result=rule_expr();
+			return result;
 		break;
 	}
-
 }
 int is_err(int ret){
 	switch(ret){
@@ -316,6 +307,7 @@ int is_err(int ret){
 		default:
 			return NO_ERROR;
 	}
+
 }
 bool is_operand(){
 	return ((token_type >= PLUS && token_type <= MUL)||(token_type >= COMPARE && token_type <= NOTEQUAL));
@@ -325,11 +317,9 @@ bool is_num(){
 }
 
 void init_parser(){
-
 	token = malloc(sizeof(token_t));
 	brackets_counter = 0;
 	SInit(&stack);
 	htInit(&h_tabulka);
 	already_init=true;
-
 }

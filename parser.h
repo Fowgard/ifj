@@ -20,11 +20,12 @@
 
 
 int program();
+void call_generator(int resu);
 int rule_def();
-int rule_stat();
 int set_token_and_return();
 int pop_token();
 int rule_expr();
 int is_err(int ret);
 bool is_operand();
 bool is_num();
+void init_parser();
