@@ -10,6 +10,8 @@ int param_counter; //pocitadlo parametru pri definici funkce
 int porovnavani_counter;//pocitadlo >,<,<=,>=,==,!=
 bool already_init=false;//podmínka pro inicializaci parseru
 int uvnitr_funkce=0;//pro orientaci jestli jsme v definic funkce nebo ne 
+int can_assig = 0;//pomocna promenna urcujici, zda je mozne priradit do promenne
+int typ_promene;//typ promene
 
 //int result; // Pouzivame pro ulozeni navratove hodnoty z funkce (Error nebo ne error :D )
 // simulace pravidla <program> -> <st-list>
@@ -19,8 +21,7 @@ int program(){
 	}
 	int res; // vyhodnocovaní chyb pro parser
 	set_token_and_return();
-	switch(token_type){
-		//<program> -> <ID> <st-list>	
+	switch(token_type){	
 		case LEFT_BRACKET:
 			brackets_counter++;
 		case TYPE_INT:
@@ -34,7 +35,7 @@ int program(){
 				token_type = set_token_and_return();	
 			}
 
-			if(!is_num(pop_token()) && token_type != RIGHT_BRACKET){ //pokud vyraz nekončí zavorkou ani číslem
+			if(!is_num(pop_token()) && token_type != RIGHT_BRACKET){ //pokud vyraz nekončí zavorkou ani číslem				
 				call_generator(ERROR_2);
 				return ERROR_2;
 			}
@@ -44,7 +45,7 @@ int program(){
 				call_generator(res);
 				return res;
 			}else{
-				printf("uvnitr_funkce%d\n", uvnitr_funkce);
+
 				call_generator(res);
 			}
 		break;
@@ -53,7 +54,8 @@ int program(){
 			if (uvnitr_funkce > 1){
 				call_generator(ERROR_2);
 				return ERROR_2;
-			}	
+			}
+
 			res = rule_def();
 			if(is_err(res) != NO_ERROR){
 				uvnitr_funkce--;
@@ -68,7 +70,6 @@ int program(){
 			return NO_ERROR;
 		break;
 		case END_OF_LINE:
-			token_type = set_token_and_return();
 			res = program();
 			return res;
 		break;
@@ -76,21 +77,32 @@ int program(){
 			printf("zakončil jsem funkci\n");
 			if(uvnitr_funkce==1){
 				set_token_and_return();
+
 				return NO_ERROR;
 			}
 			else{
 				return ERROR_2;
 			}
 		break;
-		/*case TYPE_IDENTIFIER:
-			res = rule_id();
+		case TYPE_IDENTIFIER:
+			//nasledujici podminky museji byt upraveny, a napred se musi rozlisit, jestli se jedna o funkci nebo promennou
+			if(set_token_and_return() == EQUALS){
+				res = rule_id();
+			}else if(is_operator(token_type)){
+				res = rule_expr();
+			}else if(token_type == LEFT_BRACKET){
+				res = rule_call_func();
+			}else{
+				call_generator(res);
+				return res;
+			}
 			if(is_err(res) != NO_ERROR){
 				call_generator(res);
 				return res;
 			}else{
 				call_generator(res);
 			}
-		break;*/
+		break;
 
 	}
 	program();
@@ -106,7 +118,30 @@ void call_generator(int resu){
 	}
 }
 int rule_id(){
+	int result = NO_ERROR;
+	switch(token_type){
+		case TYPE_IDENTIFIER:
+			;
+			tKey k2 = ((char*)token->attribute.string.word);
+			if(htRead(&h_tabulka,k2) == NULL){//Pokud nebyla nalezena polozka, tak ji vloz	
+				
+				result=rule_id();
+				if(is_err(result)!=NO_ERROR){
+					return result;
+				}
+				tData data; //data pro hashovací tabulku
+				data.type=typ_promene;	
+				htInsert(&h_tabulka, k2, data );
+				return NO_ERROR;
+			}else{	
+				printf("tato funkce už existuje nemůžete ji redefinovat\n");				
+				return ERROR_2;
+			}
+		break;
+		case EQUALS:
 
+		break;
+	}
 return NO_ERROR;
 
 
@@ -133,7 +168,8 @@ int rule_def(){
 					htInsert(&h_tabulka, k, data );
 					result = NO_ERROR;
 					return result;
-				}else{					
+				}else{	
+					printf("tato funkce už existuje nemůžete ji redefinovat\n");				
 					result = ERROR_2;
 					return result;
 				}
@@ -284,12 +320,16 @@ int rule_expr(){
 				return result;
 			}
 			pop_token();
-			if(!is_operand()){
+			if(!is_operator()){
 				result = ERROR_4;
 				return result;
 			}
 			result=rule_expr();
 			return result;
+		break;
+		case TYPE_IDENTIFIER:
+
+
 		break;
 	}
 }
@@ -309,7 +349,7 @@ int is_err(int ret){
 	}
 
 }
-bool is_operand(){
+bool is_operator(){
 	return ((token_type >= PLUS && token_type <= MUL)||(token_type >= COMPARE && token_type <= NOTEQUAL));
 }
 bool is_num(){

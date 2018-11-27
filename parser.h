@@ -18,6 +18,9 @@
 #define ERROR_99 508
 
 
+#define ALREADY_DEF 530
+
+
 
 int program();
 void call_generator(int resu);

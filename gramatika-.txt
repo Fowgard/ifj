@@ -1,7 +1,7 @@
 1. Definice proměných: 
-	-Definuje se tak jenom že se napíše : např. když chci definovat proměnou "x" tak jenom napíše x. 
+	-Definuje se tak, že se napíše nazev proměné a "=", tento okamžik je proměná rovna nil
+	- při definici proměné nesmí chybět prava strana ( něco za "=" - může to byt ale proměná kterou definujeme)
 	-Nelze definovat proměnnou stejného jména, jako má některá již definovaná funkce, a naopak nelze definovat funkce stejného jména jako některá již definovaná proměnná v hlavním těle programu. @jinak ERROR_3
-	-Inicializuje se automaticky implicitní hodnotou nil, dokud do ní něco nevložíš, potom se inicializuje na vkládaný výraz a podle něho se určí její typ.
 	-IFJ18 používá jenom lokální proměné 
 	-Proměnnou nelze použít před její definicí. @jinak ERROR_3
 

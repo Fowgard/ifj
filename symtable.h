@@ -16,6 +16,7 @@ typedef char* tKey;
 typedef struct tData{
 	int type;
 	lexem_t lexem;
+	int definovano;
 
 }tData;
 
