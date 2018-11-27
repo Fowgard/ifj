@@ -1,2 +1,6 @@
-def nsse_funkce1 ( ahoj ) 
+8 +3
+8 *7 
+8+4
+4+8
+def nase_funkce1 (a , b, c
 end

@@ -2,19 +2,20 @@
 
 int token_type; //aktualni token
 char *token_attribute; //atribut aktualniho tokenu
-token_t *token;
+token_t *token = NULL;
 tStack stack; //Zasobnik pro vyrazy
 tHTable* h_tabulka; // Hashovaci tabulka
 int brackets_counter; //Leve zavorky ++, prave --
 int param_counter; //pocitadlo parametru pri definici funkce
 
+bool already_init=false;//podmínka pro inicializaci parseru
+
 //int result; // Pouzivame pro ulozeni navratove hodnoty z funkce (Error nebo ne error :D )
 // simulace pravidla <program> -> <st-list>
 int program(){
+	if(!already_init)
+		init_parser();
 
-	brackets_counter = 0;
-	SInit(&stack);
-	htInit(&h_tabulka);
 	int res;
 
 	set_token_and_return();
@@ -31,24 +32,23 @@ int program(){
 				/*if ( funkce,která vrací TYPE_FLOAT/TYPE_FLOAT || proměné TYPE_FLOAT nebo TYPE_INT ){
 					nastavíme token_type na to co vrací;
 				}*/
-				printf("PUSHUJI: %d\n", token_type);
+				//printf("PUSHUJI: %d\n", token_type);
 				SPush(&stack, token_type);
 				token_type = set_token_and_return();
 		
 			}
-			printf("KONEC PUSHOVANI\n----------------------------:\n");
+			//printf("KONEC PUSHOVANI\n----------------------------:\n");
 			if(!is_num(pop_token()) && token_type != RIGHT_BRACKET){
-				//ERROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOR
 				printf("Expr nekončí číslem ani závorkou\n");
-				return -1; // UPRAVIIIIIIIIIIIIIIT
+				return ERROR_2;
 			}
 			res = rule_expr();
-			if(is_err(res) != NO_ERROR){
-				//ZPRACUJ CHYBU UUUUUUUUUUUUUUUUUUUUUUUUUU
 
-				printf("A kurnik\n");
+			if(is_err(res) != NO_ERROR){
+				call_generator(res);
+				return res;
 			}else{
-				printf("JUpíííííí\n");
+				call_generator(res);
 			}
 
 		break;
@@ -56,44 +56,54 @@ int program(){
 		case DEF:	
 			rule_def();
 			res = rule_expr();
+			printf("jsem error ? %d\n", res);
 			if(is_err(res) != NO_ERROR){
-				//ZPRACUJ CHYBU UUUUUUUUUUUUUUUUUUUUUUUUUU
-
-				printf("neco se pokazilo v def\n");
+				call_generator(res);
+				return res;
 			}else{
-				printf("funkce byla uspesne deklarovana\n");
+				call_generator(res);
 			}
 
+		case END_OF_FILE:	
+			return NO_ERROR;
+
 	}
-			
+	program();
 
 }
 
+void call_generator(int resu){
+	if (is_err(resu)!=NO_ERROR){
+		printf("vyskytl se error: %d \n", resu );
+		exit(-1);
+	}
+	else{
+		printf("zavolam generator pro posledni radek \n");
+	}
+}
+
 int rule_def(){
-	int result;
+	int result = NO_ERROR;
 	switch(token_type){
 		case DEF:
-			printf("JSEM V DEF\n");
+			//printf("JSEM V DEF\n");
 
 			if(set_token_and_return() != TYPE_IDENTIFIER){
 				result = ERROR_2;
 				return result;
 			}
 			else{
-				tKey *k = ((char*)&token->attribute.string.word);
-				printf("vlozil jsem si ke\n");
-				printf("jdu vkladat %s\n", &k);
-				printf("QQQQQQQQ\n");
+				tKey k = ((char*)token->attribute.string.word);
 				if(htRead(&h_tabulka,k) == NULL){//Pokud nebyla nalezena polozka, tak ji vloz
 					
-					printf("jdu vkladat\n");
-					if(result == is_err(rule_def())){
+					if(result != is_err(rule_def())){
 						return result;
 					}
 					tData data; //data pro hashovací tabulku
 					data.type=param_counter;	
-					htInsert(&h_tabulka, &token->attribute.string, data );
+					htInsert(&h_tabulka, k, data );
 					result = NO_ERROR;
+					printf("vracom no ERROR\n");
 					return result;
 
 				}else{					
@@ -103,7 +113,7 @@ int rule_def(){
 			}
 		break;
 		case TYPE_IDENTIFIER:
-			printf("JSEM V ID\n");
+			printf("stav zavorek %d\n", brackets_counter);
 			if (brackets_counter==0){
 				if(set_token_and_return() != LEFT_BRACKET){
 					result = ERROR_2;
@@ -111,24 +121,26 @@ int rule_def(){
 				}
 				else{
 					brackets_counter++;
-					if(result == is_err(rule_def())){
+					if(result != is_err(rule_def())){
 						return result;
 					}
 				}
 
 			}
+
 			if (brackets_counter==1){
 				if(set_token_and_return() != COMMA && token_type != RIGHT_BRACKET){
 					result = ERROR_2;
 					return result;
 				}
 				else if(token_type == COMMA){
+
 					param_counter++;
 				}
 				else {
 					brackets_counter--;
 				}
-				if(result == is_err(rule_def())){
+				if(result != is_err(rule_def())){
 					return result;
 				}
 
@@ -139,15 +151,14 @@ int rule_def(){
 			}
 		break;
 		case LEFT_BRACKET:
-			printf("JSEM V LEFT BR\n");
+
 			if (brackets_counter==1){
 				if(set_token_and_return() != TYPE_IDENTIFIER){
 					result = ERROR_2;
 					return result;
 				}
 				else{
-					brackets_counter++;
-					if(result == is_err(rule_def())){
+					if(result != is_err(rule_def())){
 						return result;
 					}
 
@@ -167,7 +178,7 @@ int rule_def(){
 					return result;
 				}
 				set_token_and_return();
-				if(result == is_err(rule_stat())){
+				if(result != is_err(rule_stat())){
 					return result;
 				}
 
@@ -183,7 +194,7 @@ int rule_def(){
 					result = ERROR_2;
 					return result;
 				}
-				if(result == is_err(rule_def())){
+				if(result != is_err(rule_def())){
 					return result;
 				}
 			}
@@ -212,14 +223,15 @@ int rule_stat(){
 }
 
 int set_token_and_return(){
-	get_token(&token);
-	token_type = &token->type;
+	get_token(token);
+	token_type = token->type;
+	//printf("%d\n",token_type );
 	return token_type;
 }
 
 int pop_token(){
 	token_type = SPop(&stack);
-	printf("POP_TOKEN: %d\n",token_type);
+	//printf("POP_TOKEN: %d\n",token_type);
 	return token_type;
 }
 
@@ -310,4 +322,14 @@ bool is_operand(){
 }
 bool is_num(){
 	return (token_type == TYPE_INT || token_type == TYPE_FLOAT);
+}
+
+void init_parser(){
+
+	token = malloc(sizeof(token_t));
+	brackets_counter = 0;
+	SInit(&stack);
+	htInit(&h_tabulka);
+	already_init=true;
+
 }
