@@ -173,12 +173,12 @@ int get_token(token_t *token)
 					token->type = COMMA;
 					return SUCCESS;
 				}				
-				else if(symbol == ')')
+				else if(symbol == '(')
 				{
 					token->type = LEFT_BRACKET;
 					return SUCCESS;
 				}
-				else if(symbol == '(')
+				else if(symbol == ')')
 				{
 					token->type = RIGHT_BRACKET;
 					return SUCCESS;
