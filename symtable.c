@@ -1,7 +1,7 @@
 #include "symtable.h"
 
 int HTSIZE = MAX_HTSIZE;
-
+ 
 int hashCode ( tKey key ) {
 	unsigned int h=0;
 	const unsigned char *p;
@@ -58,7 +58,7 @@ tHTItem* htSearch ( tHTable* ptrht, tKey key ) {
 ** tedy proveďte.vložení prvku na začátek seznamu.
 **/
 
-void htInsert ( tHTable* ptrht, tKey key, tData data ) {
+void htInsert ( tHTable* ptrht, tKey key, tData *data ) {
 	tHTItem* tmp = htSearch(ptrht, key);
 	int hkey = hashCode(key);
 	if(tmp != NULL)

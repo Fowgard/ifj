@@ -24,7 +24,7 @@ typedef struct tData{
 /*Datová položka TRP s explicitně řetězenými synonymy*/
  typedef struct tHTItem{
 	tKey key;				/* klíč  */
-	tData data;				/* obsah */
+	tData *data;				/* obsah */
 	struct tHTItem* ptrnext;	/* ukazatel na další synonymum */
 } tHTItem;
 
@@ -44,7 +44,7 @@ void htInit ( tHTable* ptrht );
 
 tHTItem* htSearch ( tHTable* ptrht, tKey key );
 
-void htInsert ( tHTable* ptrht, tKey key, tData data );
+void htInsert ( tHTable* ptrht, tKey key, tData *data );
 
 tData* htRead ( tHTable* ptrht, tKey key );
 

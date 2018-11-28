@@ -10,6 +10,10 @@
 
 #define FILE_ERROR 5
 
+
+
+
+
 int main(int argc, char *argv[])
 {
 	FILE *source_file;

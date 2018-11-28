@@ -1,4 +1,4 @@
-#include "token.h"
+#include "token.h" 
 #include "generator.h"
 
 //makra pro jednodussi pirdavani instrukci/kodu

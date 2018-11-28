@@ -118,36 +118,33 @@ int zjisti_co_je_id(){
 	int result = NO_ERROR;
 			tKey k = ((char*)token->attribute.string.word);
 			//tady bych chtěl nějak udělat abych si vyčetl data te proměné, když to nebude již založeno takže asi něco jako tData data1=htRead(&h_tabulka,k) ??? a nebo ještě alokace nebo jak ?? -- zeptat se kuby !!!
-			/*tData data2;
-			//data2 = malloc(sizeof(tData));
-			char *p = htRead(&h_tabulka,k);
-			data2= *p;
-			printf("typ promene %d\n",	data2.type);*/
-			if(htRead(&h_tabulka,k) == NULL){//Pokud nebyla nalezena polozka, tak ji vloz
+			
+			
+			if(htRead(h_tabulka,k) == NULL){//Pokud nebyla nalezena polozka, tak ji vloz
 				tmp=token;
 				if(set_token_and_return() == LEFT_BRACKET){
 					printf("volani jeste nedefinovane funkce\n");
 					//vlozime ji do hashtabulky a reknem že data.definovano=false; bude to stačit ?
-					tData data; //data pro hashovací tabulku
-					data.type=NULL;	
-					data.definovano=false;	
+					tData *data = malloc(sizeof(tData)); //data pro hashovací tabulku
+					data->type=NULL;	
+					data->definovano=false;	
 
-					htInsert(&h_tabulka, k, data );
+					htInsert(h_tabulka, k, data );
 					printf("dosel jsem sem :D juppíííí\n");
 					return NULL; 
 				}
 				else if(token_type == EQUALS){
 					//zde se bude jednat o definici nove promene, musí se nainicializovat na nil, potom se do ní musí přidat hodnota která je za "="
-					result=rule_definice_promene();
+					//result=rule_definice_promene();
 					if(is_err(result)!=NO_ERROR){
 
 						return result;
 					}
-					tData data; //data pro hashovací tabulku
-					//data = malloc(sizeof(tData));
-					data.type=TYPE_FLOAT;
-					printf("priradil jsem typ do promene %d \n",data.type);
-					htInsert(&h_tabulka, k, data );
+					tData *data = malloc(sizeof(tData));
+					data->type=TYPE_FLOAT;
+					printf("priradil jsem typ do promene %d \n",data->type);
+					htInsert(h_tabulka, k, data );
+
 					return tmp->type;
 				}
 			}else{
@@ -164,9 +161,9 @@ int zjisti_co_je_id(){
 					if(is_err(result)!=NO_ERROR){
 						return result;
 					}
-					tData data; //data pro hashovací tabulku
-					data.type=tmp->type;	
-					htInsert(&h_tabulka, k, data );
+					tData *data = malloc(sizeof(tData)); //data pro hashovací tabulku
+					data->type=tmp->type;	
+					htInsert(h_tabulka, k, data );
 					return tmp->type;
 				}
 
@@ -204,17 +201,17 @@ int rule_def(){
 			}
 			else{
 				tKey k = ((char*)token->attribute.string.word);
-				if(htRead(&h_tabulka,k) == NULL){//Pokud nebyla nalezena polozka, tak ji vloz	
+				if(htRead(h_tabulka,k) == NULL){//Pokud nebyla nalezena polozka, tak ji vloz	
 					result=rule_def();
 					if(is_err(result)!=NO_ERROR){
 						return result;
 					}
-					tData data; //data pro hashovací tabulku
+					tData *data = malloc(sizeof(tData)); //data pro hashovací tabulku
 					//data.typ_funkce = token_type;
-					data.type=param_counter;
-					data.definovano=true;	
+					data->type=param_counter;
+					data->definovano=true;	
 					//musíme nějak aktualizovat type te funkce .... asi nejlepší by bylo kdyby se prostě provadělo při každym načtení řadku v funkci předefinovanu typu funkce	
-					htInsert(&h_tabulka, k, data );
+					htInsert(h_tabulka, k, data );
 					result = NO_ERROR;
 					return result;
 				}else{	
@@ -414,6 +411,7 @@ void init_parser(){
 	token = malloc(sizeof(token_t));
 	brackets_counter = 0;
 	SInit(&stack);
-	htInit(&h_tabulka);
+	h_tabulka = (tHTable*) malloc ( sizeof(tHTable) );
+	htInit(h_tabulka);
 	already_init=true;
 }

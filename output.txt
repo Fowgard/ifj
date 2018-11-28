@@ -1,3 +1,0 @@
-.IFJcode18
-JUMP $$main
-LF@!padesat
