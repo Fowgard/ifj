@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include "token.h"
 
 
@@ -16,7 +17,7 @@ typedef char* tKey;
 typedef struct tData{
 	int type;
 	lexem_t lexem;
-	int definovano;
+	bool definovano;
 
 }tData;
 
