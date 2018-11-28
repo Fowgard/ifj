@@ -2,12 +2,12 @@
 
 CC = gcc
 CFLAGS = -std=c99 -g -Wall -pedantic
-#DEPS = scanner.h parser.h stack.h token.h
-#OBJ = scanner parser stack token
+#DEPS = scanner.h parser.h stack.h token.h symtable.h
+#OBJ = scanner parser stack token symtable
 
 
-ifj: main.c token.o scanner.o parser.o stack.o generator.o
-	$(CC) $(CFLAGS) -o $@ main.c token.o scanner.o parser.o stack.o generator.o
+ifj: main.c token.o scanner.o parser.o stack.o generator.o symtable.o
+	$(CC) $(CFLAGS) -o $@ main.c token.o scanner.o parser.o stack.o generator.o symtable.o
 #%.o: %.c $(DEPS)
 #	$(CC) -c -o $@ $< $(CFLAGS)
 

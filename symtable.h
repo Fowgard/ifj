@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include "token.h"
 
 
 /* Maximální velikost pole pro implementaci
@@ -15,6 +17,7 @@ typedef char* tKey;
 typedef struct tData{
 	int type;
 	lexem_t lexem;
+	bool definovano;
 
 }tData;
 

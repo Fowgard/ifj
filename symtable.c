@@ -1,4 +1,3 @@
-
 #include "symtable.h"
 
 int HTSIZE = MAX_HTSIZE;
@@ -83,6 +82,7 @@ void htInsert ( tHTable* ptrht, tKey key, tData data ) {
 */
 
 tData* htRead ( tHTable* ptrht, tKey key ) {
+
 	tHTItem* tmp = htSearch(ptrht, key);
 	if (tmp != NULL)
 		return &tmp->data;
