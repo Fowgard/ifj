@@ -85,7 +85,7 @@ tData* htRead ( tHTable* ptrht, tKey key ) {
 
 	tHTItem* tmp = htSearch(ptrht, key);
 	if (tmp != NULL)
-		return &tmp->data;
+		return tmp->data;
 	return NULL;
 }
 

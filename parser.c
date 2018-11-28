@@ -42,7 +42,6 @@ int program(){
 				call_generator(ERROR_2);
 				return ERROR_2;
 			}
-
 			res = rule_def();
 			if(is_err(res) != NO_ERROR){
 				uvnitr_funkce--;
@@ -96,16 +95,23 @@ void call_generator(int resu){
 }
 int rule_expresion_pusher(){
 	int result=NO_ERROR;
-	while(token_type == TYPE_INT  || token_type == TYPE_FLOAT || 
-					(token_type >=PLUS && token_type <= NOTEQUAL)){ //musí se dodělat že tam můžou byt proměné i funkce jako čísla 
-				/*if ( funkce,která vrací TYPE_FLOAT/TYPE_FLOAT || proměné TYPE_FLOAT nebo TYPE_INT ){
-					nastavíme token_type na to co vrací;
-				}*/
+	while((token_type == TYPE_INT)  || (token_type == TYPE_FLOAT) || 
+					(token_type >=PLUS && token_type <= MUL)|| 
+					(token_type >=LEFT_BRACKET && token_type <= NOTEQUAL)|| 
+					(token_type ==TYPE_IDENTIFIER)){
+					if (token_type==TYPE_IDENTIFIER){
+						int typa = zjisti_co_je_id();
+						if (typa!=TYPE_INT && typa != TYPE_FLOAT){
+							//vycisti zasobnik ( musime dodelat funkci ) ( zkopiravat :D)
+
+							return ERROR_2;
+						}
+					} 
 				SPush(&stack, token_type);
 				token_type = set_token_and_return();	
 			}
 
-			if(!is_num(pop_token()) && token_type != RIGHT_BRACKET){ //pokud vyraz nekončí zavorkou ani číslem				
+			if(!is_num(pop_token()) && token_type != RIGHT_BRACKET && token_type != TYPE_IDENTIFIER){ //pokud vyraz nekončí zavorkou ani číslem				
 				call_generator(ERROR_2);
 				return ERROR_2;
 			}
@@ -118,83 +124,95 @@ int zjisti_co_je_id(){
 	int result = NO_ERROR;
 			tKey k = ((char*)token->attribute.string.word);
 			//tady bych chtěl nějak udělat abych si vyčetl data te proměné, když to nebude již založeno takže asi něco jako tData data1=htRead(&h_tabulka,k) ??? a nebo ještě alokace nebo jak ?? -- zeptat se kuby !!!
-			
-			
+
+
 			if(htRead(h_tabulka,k) == NULL){//Pokud nebyla nalezena polozka, tak ji vloz
 				tmp=token;
-				if(set_token_and_return() == LEFT_BRACKET){
-					printf("volani jeste nedefinovane funkce\n");
-					//vlozime ji do hashtabulky a reknem že data.definovano=false; bude to stačit ?
-					tData *data = malloc(sizeof(tData)); //data pro hashovací tabulku
-					data->type=NULL;	
-					data->definovano=false;	
-
-					htInsert(h_tabulka, k, data );
-					printf("dosel jsem sem :D juppíííí\n");
-					return NULL; 
-				}
-				else if(token_type == EQUALS){
+				if(set_token_and_return() == EQUALS){
 					//zde se bude jednat o definici nove promene, musí se nainicializovat na nil, potom se do ní musí přidat hodnota která je za "="
-					//result=rule_definice_promene();
+					tData *data = malloc(sizeof(tData));
+					data->type=NIL;
+					htInsert(h_tabulka, k, data );
+					result=rule_definice_promene();
 					if(is_err(result)!=NO_ERROR){
 
 						return result;
 					}
-					tData *data = malloc(sizeof(tData));
-					data->type=TYPE_FLOAT;
-					printf("priradil jsem typ do promene %d \n",data->type);
+					
+					data->type=typ_promene;
 					htInsert(h_tabulka, k, data );
-
-					return tmp->type;
+					printf("data->type%d \n",data->type);
+					return data->type;
+				}
+				else{
+					printf("volani funkce, která ještě něbyla inciializovana QQ\n");
+					return TYPE_INT;
 				}
 			}else{
+				tData *data2 = malloc(sizeof(tData));
+				data2=htRead(h_tabulka,k);
 				tmp=token;
-				if(set_token_and_return() == LEFT_BRACKET){
-					printf("volani již definovane funkce\n");
-					//chceme zjistit jenom její id 
-				}
-				else if(token_type == EQUALS){
+				if(token_type == EQUALS){
 					//nové přiřazování do proměné, hádám když můžem přetypovávat i znova a znova redefinovat proměnou tak se nic nestane když jenom 
-					//result=rule_definice_promene();
+					result=rule_definice_promene();
 					
 					result=NO_ERROR;
 					if(is_err(result)!=NO_ERROR){
 						return result;
 					}
 					tData *data = malloc(sizeof(tData)); //data pro hashovací tabulku
-					data->type=tmp->type;	
+					data->type=typ_promene;	
 					htInsert(h_tabulka, k, data );
 					return tmp->type;
+				}else{
+					return data2->type;
 				}
-
-
 			}
 }
 
 int rule_definice_promene(){
-	typ_promene=WITHOUT_TYPE;//není zo zatím zadny typ 
+	int result;
+	int typa;
+	typ_promene=WITHOUT_TYPE;//není to zatím zadny typ
+	set_token_and_return(); 
 	switch(token_type){
 		case TYPE_STRING:
 			printf("musíme přidat do proměné ten string co je za tím \n");
+			// co tady může všechno nasledovat vlastně ?? sčítaní stringu a nebo EOL ? 
 		break;
 		case TYPE_IDENTIFIER:
-			if(zjisti_co_je_id()==TYPE_STRING){
+			typa = zjisti_co_je_id();
+			if(typa==TYPE_STRING){
 				printf("musíme přidat do proměné ten string co je za tím \n");
+				// co tady může všechno nasledovat vlastně ?? sčítaní stringu a nebo EOL ? 
 			}
-			else
+			else if(typa==NIL){
+				if(set_token_and_return()!=END_OF_LINE){
+					return ERROR_2; // možná 4 ?? IDK
+				}
+				return NO_ERROR;
+			}
+			else{
+				result=rule_expresion_pusher();
+				return result;
+			}
+
 		break;
+		case TYPE_INT:
+		case TYPE_FLOAT:
+			result=rule_expresion_pusher();
+			return result;
+		break;
+		default:
+			return ERROR_2;
 			
-			rule_expresion_pusher();
 	}
-	
-	return NO_ERROR;
 }
 
 int rule_def(){
 	int result = NO_ERROR;
 	switch(token_type){
 		case DEF:
-			//printf("JSEM V DEF\n");
 			if(set_token_and_return() != TYPE_IDENTIFIER){
 				result = ERROR_2;
 				return result;
@@ -208,7 +226,7 @@ int rule_def(){
 					}
 					tData *data = malloc(sizeof(tData)); //data pro hashovací tabulku
 					//data.typ_funkce = token_type;
-					data->type=param_counter;
+					data->pocet_parametru=param_counter;
 					data->definovano=true;	
 					//musíme nějak aktualizovat type te funkce .... asi nejlepší by bylo kdyby se prostě provadělo při každym načtení řadku v funkci předefinovanu typu funkce	
 					htInsert(h_tabulka, k, data );
@@ -305,21 +323,10 @@ int rule_def(){
 	}
 }
 
-int set_token_and_return(){
-	get_token(token);
-	token_type = token->type;
-	//printf("%d\n",token_type );
-	return token_type;
-}
-
-int pop_token(){
-	token_type = SPop(&stack);
-	//printf("POP_TOKEN: %d\n",token_type);
-	return token_type;
-}
 
 int rule_expr(){
 	int result;
+	int typ = TYPE_INT;
 	switch(token_type){
 		case PLUS:
 		case MINUS:
@@ -362,8 +369,15 @@ int rule_expr(){
 		case TYPE_FLOAT:
 			typ_promene=TYPE_FLOAT;
 		case TYPE_INT:
-			if (typ_promene!=TYPE_FLOAT){
+		case TYPE_IDENTIFIER:
+			if (token_type==TYPE_IDENTIFIER){	
+				typ=zjisti_co_je_id();
+			}
+			if (typ_promene!=TYPE_FLOAT && typ==TYPE_INT){
 				typ_promene=TYPE_INT;		
+			}
+			else{
+				typ_promene=TYPE_FLOAT;
 			}
 			if(SEmpty(&stack)){
 				result = NO_ERROR;
@@ -376,10 +390,6 @@ int rule_expr(){
 			}
 			result=rule_expr();
 			return result;
-		break;
-		case TYPE_IDENTIFIER:
-
-
 		break;
 	}
 }
@@ -403,7 +413,13 @@ bool is_operator(){
 	return ((token_type >= PLUS && token_type <= MUL)||(token_type >= COMPARE && token_type <= NOTEQUAL));
 }
 bool is_num(){
-	return (token_type == TYPE_INT || token_type == TYPE_FLOAT);
+	if (token_type==TYPE_IDENTIFIER){
+		int typ =zjisti_co_je_id();
+		return (typ==TYPE_INT || typ==TYPE_FLOAT);
+	}
+
+	return (token_type == TYPE_INT || token_type == TYPE_FLOAT );
+
 }
 
 void init_parser(){
@@ -414,4 +430,17 @@ void init_parser(){
 	h_tabulka = (tHTable*) malloc ( sizeof(tHTable) );
 	htInit(h_tabulka);
 	already_init=true;
+}
+
+int set_token_and_return(){
+	get_token(token);
+	token_type = token->type;
+	//printf("%d\n",token_type );
+	return token_type;
+}
+
+int pop_token(){
+	token_type = SPop(&stack);
+	//printf("POP_TOKEN: %d\n",token_type);
+	return token_type;
 }
