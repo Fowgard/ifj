@@ -7,7 +7,7 @@ CFLAGS = -std=c99 -g -Wall -pedantic
 
 
 ifj: main.c token.o scanner.o 
-	$(CC) $(CFLAGS) -o $@ main.c scanner.o token.o
+	$(CC) $(CFLAGS) -o $@ main.c token.o scanner.o 
 #%.o: %.c $(DEPS)
 #	$(CC) -c -o $@ $< $(CFLAGS)
 

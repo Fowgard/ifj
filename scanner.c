@@ -2,14 +2,15 @@
 
 
 
+
 FILE *source_file;
 
+int BLOCK_COMMENT = FALSE;
+ 
 
 void print_file()
 {
-	char c;
-
-	c = fgetc(source_file); 
+	char c = fgetc(source_file); 
     while (c != EOF) 
     { 
         printf ("%c", c); 
@@ -25,69 +26,118 @@ void set_source_file(FILE *f)
 	source_file = f;
 }
 
-
 int get_token(token_t *token)
 {
-	char lexem[] = "";
-	int state = 0;//vychozi stav automatu
-	char symbol = INIT_SYMBOL; //Zde uchovavame vzdy dalsi nacteny znak z prekladaneho souboru
+	lexem_t *lexem = malloc(sizeof (lexem_t));
+	lexem_init(lexem);
+	int state = STATE_START;//vychozi stav automatu
+	char symbol; //Zde uchovavame vzdy dalsi nacteny znak z prekladaneho souboru
 	while(state != END_OF_TOKEN)
 	{
 		symbol = fgetc(source_file);//nacteni jednoho symbolu(pismene)
+		if (symbol == '\n')
+		{
+			char tmp_symbol = fgetc(source_file);
+			if (tmp_symbol == '=')
+			{
+				int comment = 1;
+				lexem_t *lexem_com = malloc(sizeof (lexem_t));
+				lexem_init(lexem_com);
+				while (!isspace(tmp_symbol) || tmp_symbol == EOF)
+				{
+					lexem_putchar(lexem_com, tmp_symbol);
+					tmp_symbol = fgetc(source_file);
+				}
+				if (!strcmp(lexem_com->word,"=begin"))
+				{
+					lexem_del_word(lexem_com);
+					while(comment)
+					{
+						while((tmp_symbol = fgetc(source_file)) != '\n' && tmp_symbol != EOF);
+						
+
+						if(tmp_symbol == EOF)//SPRAVNE UKONCIT
+							exit(0);
+
+						tmp_symbol = fgetc(source_file);
+
+						if (tmp_symbol == '=')
+						{
+							while (!isspace(tmp_symbol) || tmp_symbol == EOF)
+							{
+								lexem_putchar(lexem_com, tmp_symbol);
+								tmp_symbol = fgetc(source_file);
+							}
+							if (!strcmp(lexem_com->word,"=end"))
+							{
+								comment = 0;
+								while((tmp_symbol = fgetc(source_file)) != '\n');
+							}
+						}
+					}
+				}
+				else
+					fprintf(stderr, "%s\n",lexem->word);
+			}
+			else
+				ungetc(tmp_symbol, source_file);
+		}
+
 		switch(state)
 		{
 			case STATE_START:	
 				//Pokud program dosel na konec souboru
 				if (symbol == EOF)
-				{
 					return END_OF_FILE;
-				}
-				//Ignorovat mezery na zacatku tokenu, btw tento if je zcela zbytečný
-				if (isspace(symbol)){					
-					state = STATE_START;
-					break;
-				}
 				//Pokud je znak pismeno nebo cislo
 				else if(isalnum(symbol))
 				{
-					strcat(lexem, &symbol); //Pridej znak k lexemu
 					//Pokud je symbol pismeno, zmen stav na identifikator / klicove slovo
-					if(isalpha(symbol)){
+					if(isalpha(symbol))
+					{
 						state = STATE_ID_KW;
+						lexem_putchar(lexem, symbol);
 					}
 					//Pokud je symbol cislo, zmen stav na cislo
-					else if(isdigit(symbol)){
+					else if(isdigit(symbol))
+					{
 						state = STATE_INT;
+						set_type(token, TYPE_INT);//Pridat symbol k lexemu a nastavy typ					
+						lexem_putchar(lexem, symbol);
 					}
-					//Pridat symbol k lexemu
-					strcat(lexem, &symbol); //Pridej znak k lexemu		
 				}
 				//Pokud je znak komentar
 				else if (symbol == '#')
 					state = STATE_COMMENT;
+				//TODO "" uvozovky => literal(if (token->lexem[0] == "\"))
 			break;
 			//nacitani identifikatoru nebo klicoveho slova
 			case STATE_ID_KW:
 
-				if (isspace(symbol))//mezera => byl nacten cely token
+				if (isspace(symbol) || symbol == EOF)//mezera => byl nacten cely token
 				{
-					if(is_keyword(&symbol)){
-						set_token(TYPE_KEYWORD, lexem);
-					}else{
-						set_token(TYPE_IDENTIFIER, lexem);
+					keyword_check(token, lexem); // musime resit jeste funkce T_T
+					
+					if (token->type == COMMENT)
+						BLOCK_COMMENT = TRUE;
+					if(BLOCK_COMMENT)
+					{
+						if (token->type == COMMENT_END)
+							BLOCK_COMMENT = FALSE;
+						free(lexem);	
 					}
-					if (symbol == EOF)
+					else
 					{
-						return END_OF_FILE;
-					}else
-					{
+						printf("%s \n", lexem->word);
 						return SUCCESS;
 					}
+					
 				}
 				else
 				{
 					if(isalnum(symbol)){
-						strcat(lexem, &symbol); //Pridej znak k lexemu						
+						lexem_putchar(lexem, symbol);
+					//Pridej znak k lexemu						
 					}else{
 						//tady se osetri pripady kdy dalsi znak je napriklad +, / apod
 					}
@@ -97,7 +147,7 @@ int get_token(token_t *token)
 			case STATE_INT:
 				if (isspace(symbol))//mezera => byl nacten cely token
 				{
-					set_token(TYPE_INT, lexem);
+					//set_type(TYPE_INT, lexem);
 					if (symbol == EOF)
 					{
 						return END_OF_FILE;
@@ -111,7 +161,7 @@ int get_token(token_t *token)
 						//Pokud je symbol cislo, tak se prida ke stavajicimu lexemu
 						if(isdigit(symbol))
 						{
-							strcat(lexem, &symbol); //Pridej znak k lexemu	
+							 //Pridej znak k lexemu	
 						}
 						//Pokud je symbol alfanumericky znak a neni cislo, vrat chybu - cislo nemuze byt spojeno s pismeny
 						else
@@ -132,17 +182,12 @@ int get_token(token_t *token)
 					
 				if (symbol == '\n')
 				{
-					return COMMENT;
+					return SUCCESS;
 				}
 					
 			break;
 		}		
 	}
-	return NEJAKA_KONSTANTA;
+	return KONSTANT;
 }
 
-// Funkce ktera zkontroluje, zda neni lexem (predany v argumentu) klicove slovo
-int is_keyword(char *lexem)
-{
-	return 0;
-}
