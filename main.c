@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include "scanner.h"
 #include "symtable.h"
+#include "generator.h"
 
 
 #define FILE_ERROR 5
-
 
 int main(int argc, char *argv[])
 {
@@ -13,12 +13,13 @@ int main(int argc, char *argv[])
 
 	FILE *source_file;
 
-	if (argc != 2) 		
+	/*
+	if (argc != 2)
 	{
 		fprintf(stderr, "Nesparvny pocet argumentu.\n");
 		exit(FILE_ERROR);
 	}
-	
+	*/
 	if ((source_file = fopen(argv[1], "r")) == NULL)
 	{	
 		fprintf(stderr, "Nepodarilo se otevrit soubor.\n");
@@ -41,13 +42,25 @@ int main(int argc, char *argv[])
 		exit(99);
 	token_init(result);
 	
-
 	
+	//zatim v komentu, predchystane na finalni verzi, volani parse
 
+	/*
+	int resul = parse;
 	
+	
+	*/
+	generator_init();
 	//zatim 1 v podmince, neni implementovana hash table pro ulozeni tokenu
 	while (get_token(result) != END_OF_FILE)//result->word != END_OF_FILE //TODO jeste doresit, nevieme jestli funguje, krajni situace
 	{
+		/*
+		printf("TYPE: %d\n",result->type);
+		printf("LEXEM: %s\n",result->attribute.string.word);
+
+		if(result->type == TYPE_INT)
+			printf("MAIN CISLO: %d\n",result->attribute.integer);
+		*/
 		//ve scanner.c
 
 		//printf("%s\n",result->attribute);
@@ -65,8 +78,9 @@ int main(int argc, char *argv[])
 		*/
 
 	}
-	
 
+
+	
 	
 	fclose(source_file);
 	return 0;

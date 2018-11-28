@@ -1,6 +1,20 @@
+def
+
+
+
+
 prvni radek
 druhy radek 
+#KOMET
+
+ as   =ddd
+
+=begin ndasd
+asd
+fagdgd
+=end 	dasd
 treti   
 ctvrty   
 #tohle je velice zajimavy komentar
 
+  
