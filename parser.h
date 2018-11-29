@@ -25,6 +25,7 @@
 
 int program();
 void call_generator(int resu);
+int rule_string();
 int rule_expresion_pusher();
 int zjisti_co_je_id();
 int rule_definice_promene();

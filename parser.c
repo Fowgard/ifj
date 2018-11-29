@@ -60,7 +60,7 @@ int program(){
 			return res;
 		break;
 		case END:
-			printf("zakončil jsem funkci\n");
+			printf("zakončil jsem deklaraci funkce\n");
 			if(uvnitr_funkce==1){
 				set_token_and_return();
 
@@ -79,9 +79,19 @@ int program(){
 				call_generator(res);
 			}
 		break;
+		case TYPE_STRING:
+			res = rule_string();
+			if(is_err(res) != NO_ERROR){
+				call_generator(res);
+				return res;
+			}else{
+				call_generator(res);
+			}
+		break;
 
 	}
 	program();
+	return NO_ERROR;
 }
 
 void call_generator(int resu){
@@ -93,31 +103,33 @@ void call_generator(int resu){
 		printf("zavolam generator pro posledni radek \n");
 	}
 }
+int rule_string(){
+	return NO_ERROR;
+}
 int rule_expresion_pusher(){
 	int result=NO_ERROR;
 	while((token_type == TYPE_INT)  || (token_type == TYPE_FLOAT) || 
-					(token_type >=PLUS && token_type <= MUL)|| 
-					(token_type >=LEFT_BRACKET && token_type <= NOTEQUAL)|| 
-					(token_type ==TYPE_IDENTIFIER)){
-					if (token_type==TYPE_IDENTIFIER){
-						int typa = zjisti_co_je_id();
-						if (typa!=TYPE_INT && typa != TYPE_FLOAT){
-							//vycisti zasobnik ( musime dodelat funkci ) ( zkopiravat :D)
-
-							return ERROR_2;
-						}
-					} 
-				SPush(&stack, token_type);
-				token_type = set_token_and_return();	
-			}
-
-			if(!is_num(pop_token()) && token_type != RIGHT_BRACKET && token_type != TYPE_IDENTIFIER){ //pokud vyraz nekončí zavorkou ani číslem				
-				call_generator(ERROR_2);
+		(token_type >=PLUS && token_type <= MUL)|| 
+		(token_type >=LEFT_BRACKET && token_type <= NOTEQUAL)|| 
+		(token_type ==TYPE_IDENTIFIER)){
+		if (token_type==TYPE_IDENTIFIER){
+			int typa = zjisti_co_je_id();
+			if (typa!=TYPE_INT && typa != TYPE_FLOAT){
+				//vycisti zasobnik ( musime dodelat funkci ) ( zkopiravat :D)
 				return ERROR_2;
 			}
-			porovnavani_counter=0;
-			result = rule_expr();
-			return result;
+		} 
+		SPush(&stack, token_type);
+		token_type = set_token_and_return();	
+		}
+
+	if(!is_num(pop_token()) && token_type != RIGHT_BRACKET && token_type != TYPE_IDENTIFIER){ //pokud vyraz nekončí zavorkou ani číslem				
+		call_generator(ERROR_2);
+		return ERROR_2;
+	}
+	porovnavani_counter=0;
+	result = rule_expr();
+	return result;
 
 }
 int zjisti_co_je_id(){
@@ -138,21 +150,26 @@ int zjisti_co_je_id(){
 
 						return result;
 					}
-					
+					data->funkce=false;
 					data->type=typ_promene;
 					htInsert(h_tabulka, k, data );
-					printf("data->type%d \n",data->type);
-					return data->type;
+					return typ_promene;
 				}
 				else{
-					printf("volani funkce, která ještě něbyla inciializovana QQ\n");
-					return TYPE_INT;
+					//zavolani jeste nedeklarovane funkce QQ
+					tData *data = malloc(sizeof(tData)); //data pro hashovací tabulku
+					data->pocet_parametru=param_counter;
+					data->definovano=false;
+					data->type=typ_promene;	
+					data->funkce=true;
+					htInsert(h_tabulka, k, data );
 				}
 			}else{
 				tData *data2 = malloc(sizeof(tData));
 				data2=htRead(h_tabulka,k);
 				tmp=token;
-				if(token_type == EQUALS){
+				if(set_token_and_return() == EQUALS){
+					printf("redefinice promene token_type %d\n",token_type);
 					//nové přiřazování do proměné, hádám když můžem přetypovávat i znova a znova redefinovat proměnou tak se nic nestane když jenom 
 					result=rule_definice_promene();
 					
@@ -161,10 +178,16 @@ int zjisti_co_je_id(){
 						return result;
 					}
 					tData *data = malloc(sizeof(tData)); //data pro hashovací tabulku
+					data->funkce=false;
 					data->type=typ_promene;	
 					htInsert(h_tabulka, k, data );
-					return tmp->type;
-				}else{
+					return typ_promene;
+				}else if(data2->funkce){
+					//jedná se o zavolani deklarovane funkce, musíme zkontrolovat její paramtery 
+					return data2->type;
+				}
+				else{
+					//jenom pouziti promene, kontrolovat něco je asi zbytečné
 					return data2->type;
 				}
 			}
@@ -218,24 +241,38 @@ int rule_def(){
 				return result;
 			}
 			else{
+
 				tKey k = ((char*)token->attribute.string.word);
-				if(htRead(h_tabulka,k) == NULL){//Pokud nebyla nalezena polozka, tak ji vloz	
+				tData *data2 = malloc(sizeof(tData));
+				data2=htRead(h_tabulka,k);
+				if(data2 == NULL || data2->definovano==false){//Pokud nebyla nalezena polozka, tak ji vloz	
 					result=rule_def();
 					if(is_err(result)!=NO_ERROR){
 						return result;
 					}
 					tData *data = malloc(sizeof(tData)); //data pro hashovací tabulku
-					//data.typ_funkce = token_type;
 					data->pocet_parametru=param_counter;
-					data->definovano=true;	
-					//musíme nějak aktualizovat type te funkce .... asi nejlepší by bylo kdyby se prostě provadělo při každym načtení řadku v funkci předefinovanu typu funkce	
+					data->definovano=true;
+					data->type=typ_promene;	
+					data->funkce=true;
+					if (data2!=NULL){
+						if (param_counter!=data2->pocet_parametru && data->funkce!=data2->funkce){
+							if(data2->type!=TYPE_INT && data2->type!=TYPE_FLOAT && data2->type!=typ_promene){
+								return ERROR_2;
+							}
+							if(data2->type!=TYPE_STRING && ((data2->type!=typ_promene) || (data2->type+1!=typ_promene))){
+								return ERROR_2;
+							}
+						}
+					}
+
 					htInsert(h_tabulka, k, data );
 					result = NO_ERROR;
+
 					return result;
 				}else{	
 					printf("tato funkce už existuje nemůžete ji redefinovat\n");				
-					result = ERROR_2;
-					return result;
+					return ERROR_2;
 				}
 			}
 		break;
@@ -294,7 +331,6 @@ int rule_def(){
 					return result;
 				}
 				printf("tady se zavola generator na generovani hlavičky funkce def nazev_funkce (param1, param2,....,paramN) \n");
-				set_token_and_return();
 				result=program();
 				printf("Uspěšné ukončení funkce, generuj end funkce\n");
 				return result;

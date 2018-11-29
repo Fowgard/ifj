@@ -19,6 +19,7 @@ typedef struct tData{
 	lexem_t lexem;
 	bool definovano;
 	int pocet_parametru;
+	bool funkce;
 
 }tData;
 
