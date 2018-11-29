@@ -1,5 +1,5 @@
-#include <stdlib.h>
-#include <string.h>
+#ifndef SYMTABLE_H
+#define SYMTABLE_H
 #include <stdbool.h>
 #include "token.h"
 
@@ -16,7 +16,7 @@ typedef char* tKey;
 /* typ obsahu (například cena zboží) */
 typedef struct tData{
 	int type;
-	lexem_t lexem;
+	lexem_t *lexem;
 	bool definovano;
 	int pocet_parametru;
 	bool funkce;
@@ -55,3 +55,4 @@ void htDelete ( tHTable* ptrht, tKey key );
 void htClearAll ( tHTable* ptrht );
 
 
+#endif

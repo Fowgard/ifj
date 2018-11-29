@@ -31,7 +31,7 @@ int SPop (tStack *S)
                             /* Operace nad prázdným zásobníkem způsobí chybu. */
 	if (S->top==0)  {
 		printf("Chyba: Došlo k podtečení zásobníku s ukazateli!\n");
-		return(NULL);	
+		exit(99);
 	}	
 	else {
 		return (S->a[S->top--]);

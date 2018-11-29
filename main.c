@@ -1,15 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
-//#include "scanner.h"
+#include <stdbool.h>
 
+#include "token.h"
+#include "scanner.h"
+#include "parser.h" 
 #include "symtable.h"
 #include "generator.h"
-//#include "stack.h"
-//#include "parser.h"
+#include "stack.h"
 
 
-#define FILE_ERROR 5
+#define FILE_ERROR 5 
 
+extern tHTable* h_tabulka;
+extern token_t* token;
+extern token_t* tmp;
+
+void free_all(token_t *scan_token)
+{
+	free(token);
+	free(tmp);
+	free(scan_token);
+	htClearAll(h_tabulka);
+	free(h_tabulka);
+}
 
 
 
@@ -18,13 +32,13 @@ int main(int argc, char *argv[])
 {
 	FILE *source_file;
 
-	/*
+	
 	if (argc != 2)
 	{
 		fprintf(stderr, "Nesparvny pocet argumentu.\n");
 		exit(FILE_ERROR);
 	}
-	*/
+	
 	if ((source_file = fopen(argv[1], "r")) == NULL)
 	{	
 		fprintf(stderr, "Nepodarilo se otevrit soubor.\n");
@@ -88,7 +102,7 @@ int main(int argc, char *argv[])
 	}
 
 
-	
+	free_all(result);
 	
 	fclose(source_file);
 	return 0;

@@ -1,7 +1,7 @@
-#include <stdlib.h>
 #include <stdbool.h>
 #include "stack.h"
-//#include "token.h"
+#include "scanner.h"
+#include "token.h" 
 #include "symtable.h"
 
 #define TYPE_FUNCTION 85

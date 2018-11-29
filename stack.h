@@ -1,6 +1,7 @@
+#ifndef STACK_H
+#define STACK_H
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdbool.h>
 
 
@@ -18,3 +19,5 @@ void SInit (tStack *S);
 void SPush (tStack *S, int token_type);
 int SPop (tStack *S);
 bool SEmpty (tStack *S);
+
+#endif

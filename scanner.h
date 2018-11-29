@@ -1,7 +1,9 @@
+#ifndef SCANNER_H
+#define SCANNER_H
 #include <stdio.h>
-#include <stdlib.h>
 #include <ctype.h>
-#include <string.h>
+#include <stdbool.h>
+
 #include "token.h"
 
 //konstanty pro jednotlive lexemy
@@ -16,3 +18,5 @@
 void set_source_file(FILE *f);
 int get_token(token_t *token);
 int is_keyword(char *lexem);
+
+#endif

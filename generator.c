@@ -1,4 +1,3 @@
-#include "token.h" 
 #include "generator.h"
 
 //makra pro jednodussi pirdavani instrukci/kodu
@@ -40,10 +39,11 @@ int c_while = 0;
 
 void gen_while_start(int condition)
 {
+	(void)condition; // at prekladac nerve
+
 	CAT_STR("LABEL START_W");
 	CAT_NUM(c_while++);
 	CAT_INST("");
-
 	CAT_INST("JUMPIFEQ");
 }
 
@@ -115,7 +115,7 @@ void generator_init()
 		exit(-1);
 	}
 
-	//pomocna_docasna_funkce();
+	pomocna_docasna_funkce();
 
 	
 }
@@ -123,9 +123,9 @@ void generator_init()
 void pomocna_docasna_funkce()
 {
 
-	gen_main_start();
-	gen_def_start("foo");
-	gen_def_end("foo");
+//	gen_main_start();
+//	gen_def_start("foo");
+//	gen_def_end("foo");
 	print_output();
 }
 
@@ -159,7 +159,7 @@ void gen_main_end()
 	CAT_INST("");
 }
 
-void gen_var_from_token(token_t *token)
+void gen_val_from_token(token_t *token)
 {
 	if(token->type == TYPE_IDENTIFIER)
 	{
@@ -205,6 +205,12 @@ void gen_var_from_token(token_t *token)
 }
 
 
+void gen_var(char *v_name)
+{
+	CAT_STR("DEFVAR LF@!");
+	CAT_STR(v_name);
+	CAT_INST("");
+}
 
 
 void gen_def_start(char *f_name)
@@ -232,6 +238,8 @@ void gen_def_return()//nemusi byt vzdy na konci = proto zvlast
 
 void gen_def_end(char *f_name)
 {
+	(void)f_name; // at prekladac nerve
+
 	//CAT_STR("LABEL $"); CAT_STR(function_id); CAT_STR("%return\n"); na co?
 	CAT_INST("POPFRAME");
 	CAT_INST("RETURN");
@@ -255,3 +263,27 @@ void gen_assign_from_call(char *v_name)
 	CAT_INST(" TF@!retvar");
 }
 
+void gen_argument(token_t *arg, int order)
+{
+	CAT_STR("DEFVAR TF@!");
+	CAT_NUM(order);
+	CAT_INST("");
+
+	CAT_STR("MOVE TF@!");
+	CAT_NUM(order);
+	gen_val_from_token(arg);
+	CAT_INST("");	
+}
+
+void gen_parametr(char *p_name, int order)
+{
+	CAT_STR("DEFVAR LF@!");
+	CAT_STR(p_name);
+	CAT_INST("");
+
+	CAT_STR("MOVE LF@!");
+	CAT_STR(p_name);
+	CAT_STR(" LF@!");
+	CAT_NUM(order);
+	CAT_INST("");
+}

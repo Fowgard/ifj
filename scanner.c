@@ -2,7 +2,6 @@
 
 
 
-
 FILE *source_file;
 
 int BLOCK_COMMENT = FALSE;

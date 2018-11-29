@@ -1,5 +1,5 @@
 #include "parser.h"
-
+ 
 int token_type; //aktualni token
 char *token_attribute; //atribut aktualniho tokenu
 token_t *token = NULL;
@@ -25,7 +25,9 @@ int program(){
 	switch(token_type){	
 		case LEFT_BRACKET:
 			brackets_counter++;
+		break;
 		case TYPE_INT:
+		break;
 		case TYPE_FLOAT:	
 			res = rule_expresion_pusher();
 			if(is_err(res) != NO_ERROR){
@@ -191,6 +193,7 @@ int zjisti_co_je_id(){
 					return data2->type;
 				}
 			}
+return -1;
 }
 
 int rule_definice_promene(){
@@ -230,6 +233,7 @@ int rule_definice_promene(){
 			return ERROR_2;
 			
 	}
+return -1;
 }
 
 int rule_def(){
@@ -357,6 +361,7 @@ int rule_def(){
 			}
 		break;
 	}
+return -1;
 }
 
 
@@ -365,6 +370,7 @@ int rule_expr(){
 	int typ = TYPE_INT;
 	switch(token_type){
 		case PLUS:
+		break;
 		case MINUS:
 			if(SEmpty(&stack)){
 				result = NO_ERROR;
@@ -379,13 +385,20 @@ int rule_expr(){
 			return result;
 		break;
 		case COMPARE:
+		break;
 		case LOE:
+		break;
 		case LESSTHAN:
+		break;
 		case MOE:
+		break;
 		case MORETHAN:
+		break;
 		case NOTEQUAL:
 			porovnavani_counter++;
+		break;
 		case DIV:
+		break;
 		case MUL:
 			if (porovnavani_counter>1){
 				return ERROR_4;
@@ -404,7 +417,9 @@ int rule_expr(){
 		break;
 		case TYPE_FLOAT:
 			typ_promene=TYPE_FLOAT;
+		break;
 		case TYPE_INT:
+		break;
 		case TYPE_IDENTIFIER:
 			if (token_type==TYPE_IDENTIFIER){	
 				typ=zjisti_co_je_id();
@@ -428,26 +443,39 @@ int rule_expr(){
 			return result;
 		break;
 	}
+return -1;
 }
+
 int is_err(int ret){
 	switch(ret){
 		case ERROR_1:
+		break;
 		case ERROR_2:
+		break;
 		case ERROR_3:
+		break;
 		case ERROR_4:
+		break;
 		case ERROR_5:
+		break;
 		case ERROR_6:
+		break;
 		case ERROR_9:
+		break;
 		case ERROR_99:
 			return ret;
+		break;
 		default:
 			return NO_ERROR;
+		break;
 	}
-
+return -1;
 }
+
 bool is_operator(){
 	return ((token_type >= PLUS && token_type <= MUL)||(token_type >= COMPARE && token_type <= NOTEQUAL));
 }
+
 bool is_num(){
 	if (token_type==TYPE_IDENTIFIER){
 		int typ =zjisti_co_je_id();
