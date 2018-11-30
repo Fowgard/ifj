@@ -1,8 +1,1 @@
-def ahoj (cus)
-15.5
-end	
-
-x = ahoj + 1
-
-
-x = 5
+1+2

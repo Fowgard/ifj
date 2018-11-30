@@ -25,9 +25,7 @@ int program(){
 	switch(token_type){	
 		case LEFT_BRACKET:
 			brackets_counter++;
-		break;
 		case TYPE_INT:
-		break;
 		case TYPE_FLOAT:	
 			res = rule_expresion_pusher();
 			if(is_err(res) != NO_ERROR){
@@ -109,26 +107,61 @@ int rule_string(){
 	return NO_ERROR;
 }
 int rule_expresion_pusher(){
+	tStack tmp_s;
+	SInit(&tmp_s);
 	int result=NO_ERROR;
-	while((token_type == TYPE_INT)  || (token_type == TYPE_FLOAT) || 
-		(token_type >=PLUS && token_type <= MUL)|| 
-		(token_type >=LEFT_BRACKET && token_type <= NOTEQUAL)|| 
-		(token_type ==TYPE_IDENTIFIER)){
-		if (token_type==TYPE_IDENTIFIER){
-			int typa = zjisti_co_je_id();
-			if (typa!=TYPE_INT && typa != TYPE_FLOAT){
-				//vycisti zasobnik ( musime dodelat funkci ) ( zkopiravat :D)
-				return ERROR_2;
+	int p_tok1;
+
+	int top_stack = I_DOLLAR;
+	SPush(&stack, top_stack);
+
+	bool is_last_NONTERM = false;
+	p_tok1 = get_prec_table_index(token_type);
+	while((token_type != END_OF_LINE)&&(token_type != END_OF_FILE)){
+		printf("CYKLUS, TOKEN: %d\n", token_type);
+		printf("%d %d\n",STop(&stack), p_tok1 );
+
+		//Pokud je na vrcholu nonterm, nepracuje se s nontermem ale symbolem pred nim (viz prednaska 8)
+		if(STop(&stack)==NONTERM){
+			printf("Na vrcholu zásobníku je NONTERM\n");
+			is_last_NONTERM = true;
+			SPop(&stack);
+			top_stack = STop(&stack);
+		}else{			
+			top_stack = STop(&stack);
+			is_last_NONTERM = false;
+		}
+		if(prior[top_stack][p_tok1]==N){
+			printf("ERROR: nedefinovaná operace v tabulce priorit!!!%d %d\n",STop(&stack), p_tok1);
+			return ERROR_IDK; //NEVIIIIIIIIIIIIIIIIIIIIIM JAKÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝ ERROR
+		}else if(prior[top_stack][p_tok1]==S){
+			printf("BUDU shiftovat\n");
+			SPush(&stack, S);
+			if(is_last_NONTERM){
+				SPush(&stack, NONTERM);
 			}
-		} 
-		SPush(&stack, token_type);
-		token_type = set_token_and_return();	
+			SPush(&stack, p_tok1);
+			print_stack(&stack);
+
+			p_tok1 = get_prec_table_index(set_token_and_return());
+			
+		}else if(prior[top_stack][p_tok1]==R){
+			if(top_of_stack_prepared_for_reduction()){
+				printf("redukuji :D\n");
+			}else{
+				printf("FATAL ERROR WHEN REDUCING\n");
+				return ERROR_IDK;
+			}
+			
+		}else if(prior[top_stack][p_tok1]==E){
+			printf("Equal :D\n");
 		}
 
-	if(!is_num(pop_token()) && token_type != RIGHT_BRACKET && token_type != TYPE_IDENTIFIER){ //pokud vyraz nekončí zavorkou ani číslem				
-		call_generator(ERROR_2);
-		return ERROR_2;
+
+	//print_stack(&stack);
+
 	}
+	printf("KONEC řádku\n");
 	porovnavani_counter=0;
 	result = rule_expr();
 	return result;
@@ -417,9 +450,7 @@ int rule_expr(){
 		break;
 		case TYPE_FLOAT:
 			typ_promene=TYPE_FLOAT;
-		break;
 		case TYPE_INT:
-		break;
 		case TYPE_IDENTIFIER:
 			if (token_type==TYPE_IDENTIFIER){	
 				typ=zjisti_co_je_id();
@@ -449,20 +480,14 @@ return -1;
 int is_err(int ret){
 	switch(ret){
 		case ERROR_1:
-		break;
 		case ERROR_2:
-		break;
 		case ERROR_3:
-		break;
 		case ERROR_4:
-		break;
 		case ERROR_5:
-		break;
 		case ERROR_6:
-		break;
 		case ERROR_9:
-		break;
 		case ERROR_99:
+		case ERROR_IDK:
 			return ret;
 		break;
 		default:
@@ -507,4 +532,65 @@ int pop_token(){
 	token_type = SPop(&stack);
 	//printf("POP_TOKEN: %d\n",token_type);
 	return token_type;
+}
+bool top_of_stack_prepared_for_reduction(tStack *stack){
+
+	printf("JSEM VE FUNKCI top_of_stack_prepared_for_reduction\n");
+	int i;
+	for(i = 0; ;i++){
+		if(stack->a[(stack->top)-i] == S){
+			break;
+		}
+	}
+	switch(get_rule_from_stack(i)){
+		case 1:
+			SPop(stack);
+			SPop(stack);
+			SPush(stack, NONTERM);
+			printf("ZAS:\n");
+			print_stack(stack);
+			return true;
+
+		break;
+		default:
+			printf("Něco se podělalo\n");
+
+		break;
+	}
+
+	printf("KONČÍM FUNKCI top_of_stack_prepared_for_reduction\n");
+	return true;
+}
+
+int get_rule_from_stack(int symbol_count){
+
+	printf("JSEM VE FUNKCI get_rule_from_stack\n");
+	switch(symbol_count){
+		case 1:
+			if((&stack)->a[((&stack)->top)-1] == S)
+				if((&stack)->a[((&stack)->top)-0] == I_DATA)
+					printf("KONČÍM FUNKCI get_rule_from_stack\n");
+					return 1;
+
+		break;
+
+
+		case 3:
+
+
+
+		break;
+	}
+}
+
+int rules1[]={{NONTERM}};
+
+void print_stack(tStack *stack){
+
+	printf("TISKNU OBSAH ZÁSOBNÍKU:\n");
+	for(
+		int i = 0;i< (stack)->top+1;i++){
+		printf("%d ", (stack)->a[i]);
+	}
+	printf("\nKONEC ZÁSOBNÍKU:\n");
 }

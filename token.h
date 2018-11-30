@@ -118,4 +118,5 @@ void lexem_del_word(lexem_t *lexem);
 #define TYPE_FLOAT 83
 #define TYPE_STRING 84
 
+
 #endif

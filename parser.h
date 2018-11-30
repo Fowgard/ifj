@@ -3,6 +3,7 @@
 #include "scanner.h"
 #include "token.h" 
 #include "symtable.h"
+#include "priority.h"
 
 #define TYPE_FUNCTION 85
 
@@ -16,6 +17,9 @@
 #define ERROR_6 506
 #define ERROR_9 507
 #define ERROR_99 508
+#define ERROR_IDK 50
+
+
 
 
 #define ALREADY_DEF 530
@@ -37,3 +41,5 @@ int is_err(int ret);
 bool is_operator();
 bool is_num();
 void init_parser();
+bool top_of_stack_prepared_for_reduction();
+int get_rule_from_stack(int symbol_count);

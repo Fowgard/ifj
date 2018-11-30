@@ -9,15 +9,16 @@
 
 
 /* pomocné zásobníky */
-typedef struct	{                          /* zásobník hodnot typu tBTNodePtr */
+typedef struct	{                          /* zásobník hodnot typu int */
     int a[MAXSTACK];
     int top;
 } tStack;
 
 
-void SInit (tStack *S);
-void SPush (tStack *S, int token_type);
-int SPop (tStack *S);
-bool SEmpty (tStack *S);
+void SInit (tStack *Stack);
+void SPush (tStack *Stack, int token_type);
+int SPop (tStack *Stack);
+int STop (tStack *Stack);
+bool SEmpty (tStack *Stack);
 
 #endif

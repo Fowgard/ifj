@@ -8,6 +8,7 @@
 #include "symtable.h"
 #include "generator.h"
 #include "stack.h"
+#include "priority.h"
 
 
 #define FILE_ERROR 5 
