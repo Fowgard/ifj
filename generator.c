@@ -38,8 +38,75 @@ int gen_to_main;//zatim vse do main
 
 
 
+void gen_substr()
+{
+	CAT_INST("LABEL $substr");
+	gen_frame_retvar();
+	CAT_INST("MOVE LF@!retvar nil@nil");
 
-void gen_builtin_length()
+	CAT_INST("DEFVAR LF@!length");
+	//volani length
+	CAT_INST("CREATEFRAME");
+	//predani argumentu
+	CAT_INST("DEFVAR TF@!0");
+	CAT_INST("MOVE TF@!0 LF@!0");
+	CAT_INST("CALL $length");
+	CAT_INST("MOVE LF@!length TF@!retvar");
+	
+	CAT_INST("DEFVAR LF@!relation");
+	// length < 0?
+	CAT_INST("LT LF@!relation LF@!length int@0");
+	CAT_INST("JUMPIFEQ $substr_end LF@!relation bool@true");
+	//length == 0?
+	CAT_INST("EQ LF@!relation LF@!length int@0");
+	CAT_INST("JUMPIFEQ $substr_end LF@!relation bool@true");
+	//length > 0
+
+	// i<0?
+	CAT_INST("LT LF@!relation LF@!1 int@0");
+	CAT_INST("JUMPIFEQ $substr_end LF@!relation bool@true");
+	// i>lengt?
+	CAT_INST("GT LF@!relation LF@!1 LF@!length");
+	CAT_INST("JUMPIFEQ $substr_end LF@!relation bool@true");
+
+	CAT_INST("LT LF@!relation LF@!2 int@0");
+	CAT_INST("JUMPIFEQ $substr_end LF@!relation bool@true");
+	CAT_INST("MOVE LF@!retvar string@");
+
+	CAT_INST("EQ LF@!relation LF@!2 int@0");
+	CAT_INST("JUMPIFEQ $substr_end LF@!relation bool@true");
+	// n > length(s) - i
+	CAT_INST("DEFVAR LF@!n");
+	CAT_INST("MOVE LF@!n LF@!length");
+	CAT_INST("SUB LF@!n LF@!n LF@!1");
+	
+	CAT_INST("GT LF@!relation LF@!2 LF@!n");
+	CAT_INST("JUMPIFEQ $n_is_max LF@!relation bool@true");
+	CAT_INST("JUMP $find_substr");
+	CAT_INST("LABEL $n_is_max");
+	CAT_INST("MOVE LF@!2 LF@!n");//nastaveni na maximalni velikost n
+	
+	CAT_INST("LABEL $find_substr");
+	CAT_INST("DEFVAR LF@!i");
+	CAT_INST("MOVE LF@!i LF@!1");
+	CAT_INST("DEFVAR LF@!symbol");
+	CAT_INST("DEFVAR LF@!cond");
+	CAT_INST("LABEL $substr_loop");
+	
+	CAT_INST("GETCHAR LF@!symbol LF@!0 LF@!i");
+	CAT_INST("CONCAT LF@!retvar LF@!retvar LF@!symbol");
+	CAT_INST("ADD LF@!i LF@!i int@1");
+	CAT_INST("SUB LF@!2 LF@!2 int@1");//celkova delka stringu se zkrati, musime od n odecist 1
+	CAT_INST("GT LF@!cond LF@!2 int@0");
+	CAT_INST("JUMPIFEQ $substr_loop LF@!cond bool@true");
+	CAT_INST("LABEL $substr_end");
+	CAT_INST("POPFRAME");
+	CAT_INST("RETURN");
+
+}	
+
+
+void gen_length()
 {
 	CAT_INST("LABEL $length");
 	gen_frame_retvar();
@@ -47,36 +114,36 @@ void gen_builtin_length()
 	gen_def_end();
 }
 
-void gen_frame_retvar()
+void gen_print()
 {
-	CAT_INST("PUSHFRAME");
-	CAT_INST("DEFVAR LF@!retvar");// MUSI BYT NA LF PROTOZE PO KONCI FUNKCI SE DELA POPFRAME,
-								// VEDLO BY KE ZTRATE HODNOTY
+	gen_frame_retvar();
+	CAT_INST("WRITE GF@!result");
+	CAT_INST("MOVE LF@!retvar nil");
+	gen_def_end();
 
 }
+
+
 
 void gen_inputi()
 {
 	gen_frame_retvar();
 	CAT_INST("READ LF@!retvar int");
-
-	CAT_INST("POPFRAME");
-	CAT_INST("RETURN");		
+	gen_def_end();
 }
 
 void gen_inputf()
 {
 	gen_frame_retvar();
 	CAT_INST("READ LF@!retvar float");
-	CAT_INST("POPFRAME");
-	CAT_INST("RETURN");		
+	gen_def_end();
 }
 void gen_inputs()
 {
 	gen_frame_retvar();
 	CAT_INST("READ LF@!retvar string");
-	CAT_INST("POPFRAME");
-	CAT_INST("RETURN");		
+	gen_def_end();
+
 }
 void print_output()
 {
@@ -116,10 +183,8 @@ void generator_init()
 
 void pomocna_docasna_funkce()
 {
-	gen_if_start();
-	gen_if_start();
-	gen_if_end();
-	gen_if_end();
+	gen_length();
+	gen_substr();
 	print_output();
 }
 
@@ -128,7 +193,7 @@ void gen_header()
 	gen_to_main = 0;
 	
 	CAT_INST(".IFJcode18");
-	CAT_INST("DEFVAR GF@!condition");
+	CAT_INST("DEFVAR GF@!result");
 
 	CAT_INST("DEFVAR GF@!tmp1");//pomocne promenne pro operace
 	CAT_INST("DEFVAR GF@!tmp2");
@@ -246,6 +311,13 @@ void gen_def_end()
 void create_frame()//musi se vyrvorit frame pro parametry, pro lepsi prehlednost pri volani z parseru
 {
 	CAT_INST("CREATEFRAME");
+}
+
+void gen_frame_retvar()
+{
+	CAT_INST("PUSHFRAME");
+	CAT_INST("DEFVAR LF@!retvar");// MUSI BYT NA LF PROTOZE PO KONCI FUNKCI SE DELA POPFRAME,
+								// VEDLO BY KE ZTRATE HODNOTY
 }
 
 void gen_call(char *fname)
@@ -375,7 +447,7 @@ void gen_if_start(char *f_name, int depth, int counter)
 	CAT_STR(f_name);
 	CAT_NUM(depth);
 	CAT_NUM(counter);
-	CAT_INST(" GF@!condition bool@false");
+	CAT_INST(" GF@!result bool@false");
 }
 
 void gen_else(char *f_name, int depth, int counter)
@@ -405,12 +477,11 @@ void gen_if_end(char *f_name, int depth, int counter)
 	CAT_NUM(depth);
 	CAT_NUM(counter);
 	CAT_INST("");
-	c_if++;
 }
 
 void gen_while_start(char *f_name, int depth, int counter)
 {
-	CAT_STR(" # while")
+	CAT_STR(" # while");
 
 	CAT_STR("LABEL $");
 	CAT_STR(f_name);
@@ -425,7 +496,7 @@ void gen_while_cond_check(char *f_name, int depth, int counter)
 	CAT_STR(f_name);
 	CAT_NUM(depth);
 	CAT_NUM(counter);
-	CAT_INST(" GF@!condition bool@false");
+	CAT_INST(" GF@!result bool@false");
 }
 void gen_while_end(char *f_name, int depth, int counter)
 {
