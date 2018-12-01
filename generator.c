@@ -1,6 +1,6 @@
 #include "generator.h"
 
-//makra pro jednodussi pirdavani instrukci/kodu
+//makra pro jednodussi pridavani instrukci/kodu
 #define CAT_INST(inst) \
 	(gen_to_main == 1) ? lexem_putstr(code_main, (inst "\n")) : lexem_putstr(code_rest, (inst "\n"))
 

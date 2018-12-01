@@ -29,9 +29,12 @@
 
 int program();
 void call_generator(int resu);
-int rule_string();
+int rule_KW();
+int rule_preset_fuctions();
+int check_end();
 int rule_expresion_pusher();
 int zjisti_co_je_id();
+int rule_param_counter();
 int rule_definice_promene();
 int rule_def();
 int set_token_and_return();

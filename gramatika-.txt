@@ -23,6 +23,7 @@
 		-Musíme kontrolovat počet parametrů při definici a při volání. @jinak ERROR_5
 		-Část 'id =' lze vynechat pokud tam bude, zapíše se do ní hodnota funkce
 
+
 3. Příkazy:
 
 	3.1 Příkaz přiřazení:
@@ -41,7 +42,7 @@
 		-Vyhodnocení výrazu -> pokud pravda sekvence_příkazů1, jinak sekvence_příkazů2 ( Jinak pokud to není bool tak se bere hodnota ( nil = false zbytek = true))
 		-Výsledkem příkazu je výsledek posledního provedeného příkazu z provedené sekvence příkazů. Je-li sekvence prázdná, je výsledek nil.
 
-	3.3 Příkaz přiřazení:
+	3.3 Příkaz cyklení:
 	#	while výraz do EOL
 	#		sekvence_příkazů
 	#	end
@@ -93,3 +94,19 @@
 
 #	chr(i)
 	-Vrátí jednoznakový řetězec se znakem, jeho	ž ASCII kód je zadán parametrem	𝑖. Případ, kdy je 𝑖 mimo interval [0; 255], vede na běhovou chybu při práci s řetězcem.
+
+
+________________________________________________________________________________________________________
+ERRORY:
+• 1 - chyba v programu v rámci lexikální analýzy (chybná struktura aktuálního lexému).
+• 2 - chyba v programu v rámci syntaktické analýzy (chybná syntaxe programu).
+• 3 - sémantická chyba v programu – nedefinovaná funkce/proměnná, pokus o redefi-
+nici funkce/proměnné, atp.
+• 4 - sémantická/běhová chyba typové kompatibility v aritmetických, řetězcových a
+relačních výrazech.
+• 5 - sémantická chyba v programu – špatný počet parametrů u volání funkce.
+• 6 - ostatní sémantické chyby.
+• 9 - běhová chyba dělení nulou.
+• 99 - interní chyba překladače tj. neovlivněná vstupním programem (např. chyba alo-
+kace paměti, atd.).
+_________________________________________________________________________________________________________

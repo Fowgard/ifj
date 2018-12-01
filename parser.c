@@ -12,8 +12,14 @@ int porovnavani_counter;//pocitadlo >,<,<=,>=,==,!=
 bool already_init=false;//podmínka pro inicializaci parseru
 int uvnitr_funkce=0;//pro orientaci jestli jsme v definic funkce nebo ne 
 int typ_promene;//typ promene
-
-
+bool uzavorkovana_funkce=false; // pro volani funkce flag na poznani jestli je funkce uzavorkovana nebo ne 
+int pocitac_param_u_call=0;
+bool last_id_func;
+int volani_func = 0;
+int last_KW=WITHOUT_TYPE;
+int deep_in_program = 0;
+char *last_function;
+int last_if_counter=0;
 //int result; // Pouzivame pro ulozeni navratove hodnoty z funkce (Error nebo ne error :D )
 // simulace pravidla <program> -> <st-list>
 int program(){
@@ -26,7 +32,9 @@ int program(){
 		case LEFT_BRACKET:
 			brackets_counter++;
 		case TYPE_INT:
-		case TYPE_FLOAT:	
+		case TYPE_FLOAT:
+		case TYPE_STRING:
+		case TYPE_IDENTIFIER:	
 			res = rule_expresion_pusher();
 			if(is_err(res) != NO_ERROR){
 				call_generator(res);
@@ -59,41 +67,19 @@ int program(){
 			res = program();
 			return res;
 		break;
-		case END:
-			printf("zakončil jsem deklaraci funkce\n");
-			if(uvnitr_funkce==1){
-				set_token_and_return();
-
-				return NO_ERROR;
-			}
-			else{
-				return ERROR_2;
-			}
-		break;
-		case TYPE_IDENTIFIER:
-			res = zjisti_co_je_id();
+		default: 			
+			res = rule_KW();
 			if(is_err(res) != NO_ERROR){
 				call_generator(res);
 				return res;
 			}else{
 				call_generator(res);
 			}
-		break;
-		case TYPE_STRING:
-			res = rule_string();
-			if(is_err(res) != NO_ERROR){
-				call_generator(res);
-				return res;
-			}else{
-				call_generator(res);
-			}
-		break;
 
 	}
 	program();
 	return NO_ERROR;
 }
-
 void call_generator(int resu){
 	if (is_err(resu)!=NO_ERROR){
 		printf("vyskytl se error: %d \n", resu );
@@ -103,8 +89,102 @@ void call_generator(int resu){
 		printf("zavolam generator pro posledni radek \n");
 	}
 }
-int rule_string(){
-	return NO_ERROR;
+
+int rule_KW(){
+	int result=NO_ERROR;
+	switch(token_type){
+		case IF:
+			deep_in_program++;
+			last_if_counter=deep_in_program;
+			last_KW=IF;
+			set_token_and_return();
+			if (token_type!=THEN){
+				result=rule_expresion_pusher();
+				if (is_err(result)!=NO_ERROR){
+					return result;
+				}
+			}
+			//pokud se to rovná then tak podmínka je nil ?? 
+			if(token_type!=THEN){
+				return ERROR_2;
+			}
+			if (set_token_and_return()!=END_OF_LINE){
+				return ERROR_2;
+			}
+			program();//musí se zakázat definice funkce 
+		break;
+		case ELSE:
+			if (deep_in_program!=last_if_counter && last_KW==ELSE){
+				return ERROR_2;
+			}
+			if (set_token_and_return()!=END_OF_LINE){
+				return ERROR_2;
+			}
+			last_KW=ELSE;
+		break;
+		case WHILE:
+			deep_in_program++;
+			last_KW=WHILE;
+			set_token_and_return();
+			if (token_type!=END_OF_LINE){//pokud se to rovná end_of_line tak podmínka je nil ??
+				result=rule_expresion_pusher();
+				if (is_err(result)!=NO_ERROR){
+					return result;
+				}
+			}
+			if (token_type!=END_OF_LINE){
+				return ERROR_2;
+			}
+			program();//musí se zakázat definice funkce
+			
+		break;
+		case END:
+			if (deep_in_program==0){
+				//tady musíme dělat něco ? :D 
+				printf("zakončil jsem deklaraci funkce\n");
+				if(uvnitr_funkce==1){
+					return check_end();
+				}
+				else{
+					return ERROR_2;
+				}
+			}
+			else{
+				deep_in_program--;
+				last_KW=END;
+				if (last_KW==WHILE){
+					printf("zakončíme while \n");
+					return check_end();
+
+				}
+				else if(last_KW==ELSE || last_KW==IF){
+					printf("zakončíme if \n");
+					last_if_counter--;
+					return check_end();
+				}
+			}
+		default:
+			result = rule_preset_fuctions();
+
+
+	}
+}
+int rule_preset_fuctions(){
+	int result=NO_ERROR;
+	switch(token_type){
+		case PRINT:
+
+		break;
+	}
+}
+
+int check_end(){
+	if(set_token_and_return()==END_OF_LINE){
+		return NO_ERROR;					
+	}
+	else{
+		return ERROR_2;
+	}
 }
 int rule_expresion_pusher(){
 	tStack tmp_s;
@@ -175,16 +255,16 @@ int zjisti_co_je_id(){
 
 			if(htRead(h_tabulka,k) == NULL){//Pokud nebyla nalezena polozka, tak ji vloz
 				tmp=token;
-				if(set_token_and_return() == EQUALS){
+				if(set_token_and_return() == EQUALS){ 	
 					//zde se bude jednat o definici nove promene, musí se nainicializovat na nil, potom se do ní musí přidat hodnota která je za "="
 					tData *data = malloc(sizeof(tData));
 					data->type=NIL;
-					htInsert(h_tabulka, k, data );
+					htInsert(h_tabulka, k, data );			
 					result=rule_definice_promene();
 					if(is_err(result)!=NO_ERROR){
-
-						return result;
+						return result;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
 					}
+					last_id_func=false;
 					data->funkce=false;
 					data->type=typ_promene;
 					htInsert(h_tabulka, k, data );
@@ -192,10 +272,37 @@ int zjisti_co_je_id(){
 				}
 				else{
 					//zavolani jeste nedeklarovane funkce QQ
+					int temp1 = pocitac_param_u_call;
+					int temp2 = brackets_counter;
+					bool temp3 = uzavorkovana_funkce;
 					tData *data = malloc(sizeof(tData)); //data pro hashovací tabulku
-					data->pocet_parametru=param_counter;
+					pocitac_param_u_call=0;
+					brackets_counter=0;
+					last_id_func=true;
+					uzavorkovana_funkce=false;
+					volani_func++;
+					result = rule_param_counter();
+
+					if(is_err(result)!=NO_ERROR){
+						return result;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
+					}
+					data->pocet_parametru=pocitac_param_u_call;
+					pocitac_param_u_call = temp1;
+					if (brackets_counter==-1){
+						brackets_counter = temp2 - 1;
+					}
+					else{
+						brackets_counter = temp2;
+					}
+					if (uzavorkovana_funkce== false && temp3 == true){
+						uzavorkovana_funkce= false;
+					}else{
+						uzavorkovana_funkce = temp3;
+					}
+					volani_func--;
 					data->definovano=false;
-					data->type=typ_promene;	
+					data->type=typ_promene;
+					last_id_func=true;	
 					data->funkce=true;
 					htInsert(h_tabulka, k, data );
 				}
@@ -204,29 +311,144 @@ int zjisti_co_je_id(){
 				data2=htRead(h_tabulka,k);
 				tmp=token;
 				if(set_token_and_return() == EQUALS){
-					printf("redefinice promene token_type %d\n",token_type);
-					//nové přiřazování do proměné, hádám když můžem přetypovávat i znova a znova redefinovat proměnou tak se nic nestane když jenom 
+					//printf("redefinice promene token_type %d\n",token_type);
+					//nové přiřazování do proměné, hádám když můžem přetypovávat i znova a znova redefinovat proměnou tak se nic nestane když jenom 					
 					result=rule_definice_promene();
-					
-					result=NO_ERROR;
 					if(is_err(result)!=NO_ERROR){
-						return result;
+						return result;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
 					}
 					tData *data = malloc(sizeof(tData)); //data pro hashovací tabulku
+					last_id_func=false;
 					data->funkce=false;
 					data->type=typ_promene;	
 					htInsert(h_tabulka, k, data );
 					return typ_promene;
 				}else if(data2->funkce){
-					//jedná se o zavolani deklarovane funkce, musíme zkontrolovat její paramtery 
+					data2->pocet_parametru;
+					int temp1 = pocitac_param_u_call;
+					int temp2 = brackets_counter;
+					bool temp3 = uzavorkovana_funkce;
+					pocitac_param_u_call=-(data2->pocet_parametru);
+					if (data2->pocet_parametru==0){
+						return data2->type;
+					}
+					brackets_counter=0;
+					last_id_func=true;
+					uzavorkovana_funkce=false;
+					volani_func++;
+					result = rule_param_counter();
+
+					if(is_err(result)!=NO_ERROR){
+						return result;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
+					}
+					if(pocitac_param_u_call!=0){
+						return ERROR_5;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
+						
+					}	
+					pocitac_param_u_call = temp1;
+					if (brackets_counter==-1){
+						brackets_counter = temp2 - 1;
+					}
+					else{
+						brackets_counter = temp2;
+					}
+					if (uzavorkovana_funkce== false && temp3 == true){
+						uzavorkovana_funkce== false;
+					}else{
+						uzavorkovana_funkce = temp3;
+					}
+					volani_func--;
 					return data2->type;
 				}
 				else{
 					//jenom pouziti promene, kontrolovat něco je asi zbytečné
+					last_id_func=false;
 					return data2->type;
 				}
 			}
 return -1;
+}
+
+int rule_param_counter(){
+	int result=NO_ERROR;
+	switch(token_type){
+		case LEFT_BRACKET:
+			brackets_counter++;
+			uzavorkovana_funkce=true;
+			set_token_and_return();
+			result=rule_param_counter();
+			return result;
+		break;
+		case RIGHT_BRACKET:
+			brackets_counter--;
+			set_token_and_return();
+			if (brackets_counter==0){
+				uzavorkovana_funkce=false;
+				return NO_ERROR;
+			}
+			else if(brackets_counter==-1 && volani_func > 1 ){
+				uzavorkovana_funkce=false;
+				return NO_ERROR;
+			}
+			else{
+				return ERROR_2;
+			}
+		break;
+		case TYPE_IDENTIFIER:
+		case TYPE_INT:
+		case TYPE_FLOAT://tady budem muset asi upravit na volani expr při +- apod. ........ i wanna kill my self
+			result = rule_expresion_pusher();
+			if (is_err(result)!=NO_ERROR){
+				return result;
+			}
+			if (token_type == COMMA ){
+				pocitac_param_u_call++;
+				result=rule_param_counter();
+				return result;
+			}
+			else if (token_type == END_OF_LINE || token_type == RIGHT_BRACKET){
+				result=rule_param_counter();
+				return result;
+			}else{
+				return ERROR_2;
+			}
+		break;
+		case COMMA:
+			if (pocitac_param_u_call==0){
+				return NO_ERROR;
+			}
+			else if ((set_token_and_return() >= TYPE_IDENTIFIER) && (token_type <= TYPE_STRING) ){
+				result=rule_param_counter();
+				return result;
+			}
+			else{
+				return ERROR_2;
+			}
+		break;
+		case PLUS:
+		case MINUS:
+		case MUL:
+		case DIV:
+			if ((set_token_and_return() >= TYPE_IDENTIFIER) && (token_type <= TYPE_STRING) ){
+				result=rule_param_counter();
+				return result;
+			}
+			else{
+				return ERROR_2;
+			}
+		case END_OF_LINE:
+			//set_token_and_return();
+			if (brackets_counter<=0 && volani_func==1 && uzavorkovana_funkce==false){
+				return NO_ERROR;
+			}
+			else{
+				return ERROR_2;
+			}
+		break;
+
+	}
+	return -1;
+
 }
 
 int rule_definice_promene(){
@@ -246,10 +468,12 @@ int rule_definice_promene(){
 				// co tady může všechno nasledovat vlastně ?? sčítaní stringu a nebo EOL ? 
 			}
 			else if(typa==NIL){
-				if(set_token_and_return()!=END_OF_LINE){
+				if(set_token_and_return()!=END_OF_LINE && token_type!=END_OF_FILE){
 					return ERROR_2; // možná 4 ?? IDK
 				}
+				else{
 				return NO_ERROR;
+				}
 			}
 			else{
 				result=rule_expresion_pusher();
@@ -273,15 +497,17 @@ int rule_def(){
 	int result = NO_ERROR;
 	switch(token_type){
 		case DEF:
-			if(set_token_and_return() != TYPE_IDENTIFIER){
+			if(set_token_and_return() != TYPE_IDENTIFIER && deep_in_program!=0){
 				result = ERROR_2;
 				return result;
 			}
 			else{
 
 				tKey k = ((char*)token->attribute.string.word);
+				last_function=k;
 				tData *data2 = malloc(sizeof(tData));
 				data2=htRead(h_tabulka,k);
+				param_counter=0;
 				if(data2 == NULL || data2->definovano==false){//Pokud nebyla nalezena polozka, tak ji vloz	
 					result=rule_def();
 					if(is_err(result)!=NO_ERROR){
@@ -291,6 +517,7 @@ int rule_def(){
 					data->pocet_parametru=param_counter;
 					data->definovano=true;
 					data->type=typ_promene;	
+					last_id_func=true;
 					data->funkce=true;
 					if (data2!=NULL){
 						if (param_counter!=data2->pocet_parametru && data->funkce!=data2->funkce){
@@ -403,7 +630,6 @@ int rule_expr(){
 	int typ = TYPE_INT;
 	switch(token_type){
 		case PLUS:
-		break;
 		case MINUS:
 			if(SEmpty(&stack)){
 				result = NO_ERROR;
@@ -418,20 +644,13 @@ int rule_expr(){
 			return result;
 		break;
 		case COMPARE:
-		break;
 		case LOE:
-		break;
 		case LESSTHAN:
-		break;
 		case MOE:
-		break;
 		case MORETHAN:
-		break;
 		case NOTEQUAL:
 			porovnavani_counter++;
-		break;
 		case DIV:
-		break;
 		case MUL:
 			if (porovnavani_counter>1){
 				return ERROR_4;
