@@ -13,14 +13,14 @@ bool already_init=false;//podmínka pro inicializaci parseru
 int uvnitr_funkce=0;//pro orientaci jestli jsme v definic funkce nebo ne 
 int typ_promene;//typ promene
 bool uzavorkovana_funkce=false; // pro volani funkce flag na poznani jestli je funkce uzavorkovana nebo ne 
-int pocitac_param_u_call=0;
-bool last_id_func;
-int volani_func = 0;
-int last_KW=WITHOUT_TYPE;
-int deep_in_program = 0;
-char *last_function;
-int last_if_counter=0;
-//int result; // Pouzivame pro ulozeni navratove hodnoty z funkce (Error nebo ne error :D )
+int pocitac_param_u_call=0;//pocitadlo argumentu pro volani funkce
+bool last_id_func;//jestli poslední identifikator byla funkce nebo promena
+int volani_func = 0;//pocet vnoreni volani funkci
+int last_KW=WITHOUT_TYPE;//posledni pouzite klicove slovo ( je to pouze pro kontrolu aby nebyli pod sebou 2x else)
+int deep_in_program = 0;//pocitadlo pro hloubku programu ( kvuli while,if apod)
+char *last_function;//nazev posledni pouzite funkce
+int last_if_counter=0;//pocitadlo pro ify
+
 // simulace pravidla <program> -> <st-list>
 int program(){
 	if(!already_init){
@@ -164,17 +164,220 @@ int rule_KW(){
 				}
 			}
 		default:
-			result = rule_preset_fuctions();
+			return rule_preset_fuctions();
 
 
 	}
 }
 int rule_preset_fuctions(){
 	int result=NO_ERROR;
+	int temp1=brackets_counter;
+	brackets_counter=0;
 	switch(token_type){
 		case PRINT:
+			if (set_token_and_return()==LEFT_BRACKET){
+				brackets_counter++;
+			}
+			if(set_token_and_return() < TYPE_IDENTIFIER && token_type > TYPE_STRING ){
+				return ERROR_5;//volani execute funkce
+			}
+			result=rule_print();
+			if (is_err(result)!=NO_ERROR){
+				return result;//volani execute funkce
+			}
+			if (brackets_counter!=0){
+				return ERROR_2;//volani execute funkce
+			}
+			brackets_counter=temp1;
+			return NIL;
+		break;
+		case LENGHT:
+			if (set_token_and_return()==LEFT_BRACKET){
+				brackets_counter++;
+			}
+			if (set_token_and_return()==TYPE_IDENTIFIER){
+				typ_promene=TYPE_STRING;
+				if(zjisti_co_je_id()!=TYPE_STRING){
+					return ERROR_5; //volani execute funkce
+				}	
+			}
+			else if(token_type==TYPE_STRING){
+				set_token_and_return();
+			}
+			else{
+				return ERROR_5; //volani execute funkce
+			}
+			if(token_type==RIGHT_BRACKET ){
+				brackets_counter--;
+			}
+			if(brackets_counter==0){
+				brackets_counter=temp1;
+				return TYPE_INT;
+			}
+		break;
+		case SUBSTR:
+			if (set_token_and_return()==LEFT_BRACKET){
+				brackets_counter++;
+			}
+			if (set_token_and_return()==TYPE_IDENTIFIER){
+				typ_promene=TYPE_STRING;
+				if(zjisti_co_je_id()!=TYPE_STRING){
+					//pridat do funkce jeste jednu promenou kdyz bude vracet string, tak at se ulozi delka 
+					return ERROR_5; //volani execute funkce
+				}	
+			}
+			else if(token_type==TYPE_STRING){
+				set_token_and_return();
+			}
+			else{
+				return ERROR_5; //volani execute funkce
+			}
+			if(token_type!=COMMA && (set_token_and_return()!=TYPE_INT || token_type!=TYPE_IDENTIFIER)){
+				return ERROR_5; //volani execute funkce
+			}
+			if (token_type==TYPE_IDENTIFIER){
+				typ_promene=TYPE_INT;
+				if(zjisti_co_je_id()!=TYPE_INT){
+					//pridat do funkce jeste jednu promenou kdyz bude vracet string, tak at se ulozi delka 
+				return ERROR_5; //volani execute funkce
+				}		
+			}
+			else if(token_type==TYPE_INT){
+				set_token_and_return();
+			}
+			else{
+				return ERROR_5; //volani execute funkce
+			}
+			if(token_type!=COMMA && (set_token_and_return()!=TYPE_INT || token_type!=TYPE_IDENTIFIER)){
+				return ERROR_5; //volani execute funkce
+			}
+			if (token_type==TYPE_IDENTIFIER){
+				typ_promene=TYPE_INT;
+				if(zjisti_co_je_id()!=TYPE_INT){
+					//pridat do funkce jeste jednu promenou kdyz bude vracet string, tak at se ulozi delka 
+				return ERROR_5; //volani execute funkce
+				}		
+			}
+			else if(token_type==TYPE_INT){
+				set_token_and_return();
+			}
+			else{
+				return ERROR_5; //volani execute funkce
+			}
+			if(token_type==RIGHT_BRACKET ){
+				brackets_counter--;
+			}
+			if(brackets_counter==0){
+				brackets_counter=temp1;
+				return TYPE_STRING;//TADY SE MUSIME DOMLUVIT NA TOM ze budu vract podle toho co mi vrati dan :D bud NIL nebo STRING
+			}
+
+		case ORD:
+			if (set_token_and_return()==LEFT_BRACKET){
+				brackets_counter++;
+			}
+			if (set_token_and_return()==TYPE_IDENTIFIER){
+				typ_promene=TYPE_STRING;
+				if(zjisti_co_je_id()!=TYPE_STRING){
+					//pridat do funkce jeste jednu promenou kdyz bude vracet string, tak at se ulozi delka 
+					return ERROR_5; //volani execute funkce
+				}	
+			}
+			else if(token_type==TYPE_STRING){
+				set_token_and_return();
+			}
+			else{
+				return ERROR_5; //volani execute funkce
+			}
+			if(token_type!=COMMA && (set_token_and_return()!=TYPE_INT || token_type!=TYPE_IDENTIFIER)){
+				return ERROR_5; //volani execute funkce
+			}
+			if (token_type==TYPE_IDENTIFIER){
+				typ_promene=TYPE_INT;
+				if(zjisti_co_je_id()!=TYPE_INT){
+					//pridat do funkce jeste jednu promenou kdyz bude vracet string, tak at se ulozi delka 
+				return ERROR_5; //volani execute funkce
+				}		
+			}
+			else if(token_type==TYPE_INT){
+				set_token_and_return();
+			}
+			else{
+				return ERROR_5; //volani execute funkce
+			}
+			if(token_type==RIGHT_BRACKET ){
+				brackets_counter--;
+			}
+			if(brackets_counter==0){
+				brackets_counter=temp1;
+				return TYPE_INT;//TADY SE MUSIME DOMLUVIT NA TOM ze budu vract podle toho co mi vrati dan :D bud NIL nebo INT
+			}
+		break;
+		case CHR:
+			if (set_token_and_return()==LEFT_BRACKET){
+				brackets_counter++;
+			}
+			if (set_token_and_return()==TYPE_IDENTIFIER){
+				typ_promene=TYPE_INT;
+				if(zjisti_co_je_id()!=TYPE_INT){
+					//pridat do funkce jeste jednu promenou kdyz bude vracet string, tak at se ulozi delka 
+					return ERROR_5; //volani execute funkce
+				}	
+			}
+			else if(token_type==TYPE_INT){
+				set_token_and_return();
+			}
+			else{
+				return ERROR_5; //volani execute funkce
+			}
+			if(token_type==RIGHT_BRACKET ){
+				brackets_counter--;
+			}
+			if(brackets_counter==0){
+				brackets_counter=temp1;
+				return TYPE_STRING;//TADY SE MUSIME DOMLUVIT NA TOM ze budu vract podle toho co mi vrati dan :D bud NIL nebo STRING
+			}	
+		break;
+		default:
+			return ERROR_2; // tady je myšleno když to nebude cokoliv co tady máme uvedeno 
+	}
+}
+
+int rule_print(){
+	int result=NO_ERROR;
+	switch(token_type){
+		case COMMA:
+			if(set_token_and_return() < TYPE_IDENTIFIER && token_type > TYPE_STRING ){
+				return ERROR_5;
+			}
+			result=rule_print();
+			if (is_err(result)!= NO_ERROR){
+				return result;
+			}
+		break;
+		case TYPE_STRING:
+		case TYPE_IDENTIFIER:
+		case TYPE_INT:
+		case TYPE_FLOAT:
+			//nacti posli do generatoru tady zase bude muset byt nějakej expresion pusher QQ
+			if (set_token_and_return()==RIGHT_BRACKET && brackets_counter==1){
+				brackets_counter--;
+				set_token_and_return();
+				return NO_ERROR;
+			}
+			else if (token_type==COMMA){
+				result=rule_print();
+				if (is_err(result)!=NO_ERROR){
+					return result;
+				}
+			}
+			else if ((token_type==END_OF_LINE || token_type== END_OF_FILE) && brackets_counter == 0){
+				return NO_ERROR;
+			}
 
 		break;
+		default:
+			return ERROR_5;
 	}
 }
 
@@ -452,19 +655,51 @@ int rule_param_counter(){
 }
 
 int rule_definice_promene(){
-	int result;
+	int result=NO_ERROR;
 	int typa;
 	typ_promene=WITHOUT_TYPE;//není to zatím zadny typ
 	set_token_and_return(); 
 	switch(token_type){
 		case TYPE_STRING:
+			typ_promene=TYPE_STRING;
 			printf("musíme přidat do proměné ten string co je za tím \n");
+			if(set_token_and_return()==END_OF_LINE || token_type==END_OF_FILE){
+				return NO_ERROR;
+			}
+			else if (token_type == PLUS){
+				if (set_token_and_return()==TYPE_STRING){
+					result=rule_definice_promene();
+					return result;
+				}
+				else{
+					return ERROR_2;
+				}
+			}
+			else{
+				return ERROR_2;
+			}
 			// co tady může všechno nasledovat vlastně ?? sčítaní stringu a nebo EOL ? 
 		break;
 		case TYPE_IDENTIFIER:
 			typa = zjisti_co_je_id();
 			if(typa==TYPE_STRING){
+				typ_promene=TYPE_STRING;
 				printf("musíme přidat do proměné ten string co je za tím \n");
+				if(set_token_and_return()==END_OF_LINE || token_type==END_OF_FILE){
+					return NO_ERROR;
+				}
+				else if (token_type == PLUS){
+					if (set_token_and_return()==TYPE_STRING){
+						result=rule_definice_promene();
+						return result;
+					}
+					else{
+						return ERROR_2;
+					}
+				}
+				else{
+					return ERROR_2;
+				}
 				// co tady může všechno nasledovat vlastně ?? sčítaní stringu a nebo EOL ? 
 			}
 			else if(typa==NIL){
@@ -472,7 +707,7 @@ int rule_definice_promene(){
 					return ERROR_2; // možná 4 ?? IDK
 				}
 				else{
-				return NO_ERROR;
+					return NO_ERROR;
 				}
 			}
 			else{
