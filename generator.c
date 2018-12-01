@@ -35,26 +35,20 @@ lexem_t *code_rest;
 FILE *output_file;
 int gen_to_main;//zatim vse do main 
 						//bude urcovat jestli generovat do mainu(jiny lexem) nebo do zbytku
-int c_while = 0;
 
-void gen_while_start(int condition)
+
+
+
+void gen_builtin_length()
 {
-	(void)condition; // at prekladac nerve
-
-	CAT_STR("LABEL START_W");
-	CAT_NUM(c_while++);
-	CAT_INST("");
-	CAT_INST("JUMPIFEQ");
+	CAT_INST("LABEL $length");
+	gen_frame_retvar();
+	CAT_INST("STRLEN LF@!retvar LF@!0");
+	gen_def_end();
 }
-
-/*void gen_while_end()
-{
-
-}*/
 
 void gen_frame_retvar()
 {
-	CAT_INST("CREATEFRAME");
 	CAT_INST("PUSHFRAME");
 	CAT_INST("DEFVAR LF@!retvar");// MUSI BYT NA LF PROTOZE PO KONCI FUNKCI SE DELA POPFRAME,
 								// VEDLO BY KE ZTRATE HODNOTY
@@ -122,10 +116,10 @@ void generator_init()
 
 void pomocna_docasna_funkce()
 {
-
-//	gen_main_start();
-//	gen_def_start("foo");
-//	gen_def_end("foo");
+	gen_if_start();
+	gen_if_start();
+	gen_if_end();
+	gen_if_end();
 	print_output();
 }
 
@@ -134,6 +128,12 @@ void gen_header()
 	gen_to_main = 0;
 	
 	CAT_INST(".IFJcode18");
+	CAT_INST("DEFVAR GF@!condition");
+
+	CAT_INST("DEFVAR GF@!tmp1");//pomocne promenne pro operace
+	CAT_INST("DEFVAR GF@!tmp2");
+	CAT_INST("DEFVAR GF@!tmp3");
+	
 	CAT_INST("JUMP $$main");
 	
 }
@@ -236,9 +236,8 @@ void gen_def_return()//nemusi byt vzdy na konci = proto zvlast
 	CAT_INST("RETURN");
 }
 
-void gen_def_end(char *f_name)
+void gen_def_end()
 {
-	(void)f_name; // at prekladac nerve
 
 	//CAT_STR("LABEL $"); CAT_STR(function_id); CAT_STR("%return\n"); na co?
 	CAT_INST("POPFRAME");
@@ -285,5 +284,160 @@ void gen_parametr(char *p_name, int order)
 	CAT_STR(p_name);
 	CAT_STR(" LF@!");
 	CAT_NUM(order);
+	CAT_INST("");
+}
+
+void gen_stack_push(token_t *token)
+{
+	CAT_STR("PUSHS ");
+	gen_val_from_token(token);
+	CAT_INST("");
+}
+
+void gen_stack_pop(char *frame, char *v_name)
+{
+	CAT_STR("POPS ");
+	CAT_STR(frame);
+	CAT_STR("@!");
+	CAT_STR(v_name);
+	CAT_INST("");
+
+}
+
+void gen_stack_add()
+{
+	CAT_INST("ADDS");
+}
+
+void gen_stack_sub()
+{
+	CAT_INST("SUBS");
+}
+
+void gen_stack_mul()
+{
+	CAT_INST("MULS");
+}
+
+void gen_stack_div()
+{
+	CAT_INST("DIVS");
+}
+
+void gen_stack_idiv()
+{
+	CAT_INST("IDIVS");
+}
+
+void gen_stack_eq()
+{
+	CAT_INST("EQS");
+}
+
+void gen_stack_less_than()
+{
+	CAT_INST("LTS");
+}
+
+void gen_stack_more_than()
+{
+	CAT_INST("GTS");
+}
+
+void gen_stack_and()
+{
+	CAT_INST("ANDS");
+}
+
+void gen_stack_or()
+{
+	CAT_INST("ORS");
+}
+
+void gen_stack_not()
+{
+	CAT_INST("NOTS");
+}
+
+void gen_stack_concatanate()//konkatenace nelze na zasobniku, poziti pomocnych promennych
+{
+	CAT_INST("POPS GF@!tmp1");
+	CAT_INST("POPS GF@!tmp2");
+
+	CAT_INST("CONCAT GF@!tmp3 GF@!tmp2 GF@!tmp1");
+	CAT_INST("PUSHS GF@!tmp3");
+}
+
+void gen_if_start(char *f_name, int depth, int counter)
+{
+	CAT_INST(" # if");
+	CAT_STR("JUMPIFEQ $");
+	CAT_STR(f_name);
+	CAT_NUM(depth);
+	CAT_NUM(counter);
+	CAT_INST(" GF@!condition bool@false");
+}
+
+void gen_else(char *f_name, int depth, int counter)
+{
+	CAT_INST(" # else");
+	CAT_STR("JMP $");
+	
+	CAT_STR(f_name);
+	CAT_NUM(depth);
+	CAT_NUM(counter + 1);
+
+	CAT_INST("");
+	
+	CAT_STR("LABEL $");
+	CAT_STR(f_name);
+	CAT_NUM(depth);
+	CAT_NUM(counter);
+	CAT_INST("");
+	
+
+}
+
+void gen_if_end(char *f_name, int depth, int counter)
+{
+	CAT_STR("LABEL $");
+	CAT_STR(f_name);
+	CAT_NUM(depth);
+	CAT_NUM(counter);
+	CAT_INST("");
+	c_if++;
+}
+
+void gen_while_start(char *f_name, int depth, int counter)
+{
+	CAT_STR(" # while")
+
+	CAT_STR("LABEL $");
+	CAT_STR(f_name);
+	CAT_NUM(depth);
+	CAT_NUM(counter);
+	CAT_INST("");
+}
+
+void gen_while_cond_check(char *f_name, int depth, int counter)
+{
+	CAT_STR("JUMPIFEQ $");
+	CAT_STR(f_name);
+	CAT_NUM(depth);
+	CAT_NUM(counter);
+	CAT_INST(" GF@!condition bool@false");
+}
+void gen_while_end(char *f_name, int depth, int counter)
+{
+	CAT_STR("JMP $");
+	CAT_STR(f_name);
+	CAT_NUM(depth);
+	CAT_NUM(counter - 1);
+	CAT_INST("");
+
+	CAT_STR("LABEL $");
+	CAT_STR(f_name);
+	CAT_NUM(depth);
+	CAT_NUM(counter);
 	CAT_INST("");
 }

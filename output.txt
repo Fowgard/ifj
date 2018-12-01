@@ -1,2 +1,12 @@
 .IFJcode18
+DEFVAR GF@!condition
+DEFVAR GF@!tmp1
+DEFVAR GF@!tmp2
+DEFVAR GF@!tmp3
 JUMP $$main
+ # if
+JUMPIFEQ $if0 GF@!condition bool@false
+ # if
+JUMPIFEQ $if0 GF@!condition bool@false
+LABEL $if0
+LABEL $if1
