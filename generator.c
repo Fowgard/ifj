@@ -105,6 +105,49 @@ void gen_substr()
 
 }	
 
+void gen_ord()
+{
+	CAT_INST("LABEL $ord");
+	gen_frame_retvar();
+	CAT_INST("MOVE LF@!retvar nil@nil");
+	CAT_INST("DEFVAR LF@!relation");
+	// i<0?
+	CAT_INST("LT LF@!relation LF@!1 int@0");
+	CAT_INST("JUMPIFEQ $ord_end LF@!relation bool@true");
+	CAT_INST("DEFVAR LF@!length");
+	//volani funkce length
+	CAT_INST("CREATEFRAME");
+	CAT_INST("DEFVAR TF@!0");
+	CAT_INST("MOVE TF@!0 LF@!0");
+	CAT_INST("CALL $length");
+	CAT_INST("MOVE LF@!length TF@!retvar");
+	CAT_INST("SUB LF@!length LF@!length int@1")
+	// i>length?
+	CAT_INST("GT LF@!relation LF@!1 LF@!length");
+	CAT_INST("JUMPIFEQ ord_end LF@!relation bool@true");
+	CAT_INST("STRI2INT LF@!retval LF@!0 LF@!1");
+	CAT_INST("LABEL $ord_end");
+	gen_def_end();
+}
+
+void gen_chr()
+{
+	CAT_INST("LABEL $chr");
+	gen_frame_retvar();
+	CAT_INST("DEFVAR LF@!relation");
+	CAT_INST("LT LF@!relation LF@!0 int@0");
+	CAT_INST("JUMPIFEQ $chr_error LF@!relation bool@true");
+	CAT_INST("GT LF@!relation LF@!0 int@255");
+	CAT_INST("JUMPIFEQ $chr_error LF@!relation bool@true");
+	CAT_INST("INT2CHAR LF@!retvar LF@!0");
+	gen_def_end();
+	CAT_INST("LABEL $chr_error");
+	CAT_INST("CLEARS");
+	CAT_INST("EXIT 58");
+	
+
+
+}
 
 void gen_length()
 {
