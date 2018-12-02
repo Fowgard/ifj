@@ -11,7 +11,7 @@ int param_counter; //pocitadlo parametru pri definici funkce
 int porovnavani_counter;//pocitadlo >,<,<=,>=,==,!=
 bool already_init=false;//podmínka pro inicializaci parseru
 int uvnitr_funkce=0;//pro orientaci jestli jsme v definic funkce nebo ne 
-int typ_promene;//typ promene
+int typ_promene=WITHOUT_TYPE;//typ promene
 bool uzavorkovana_funkce=false; // pro volani funkce flag na poznani jestli je funkce uzavorkovana nebo ne 
 int pocitac_param_u_call=0;//pocitadlo argumentu pro volani funkce
 bool last_id_func;//jestli poslední identifikator byla funkce nebo promena
@@ -395,12 +395,26 @@ int rule_expresion_pusher(){
 	SInit(&tmp_s);
 	int result=NO_ERROR;
 	int p_tok1;
-
 	int top_stack = I_DOLLAR;
 	SPush(&stack, top_stack);
 
 	bool is_last_NONTERM = false;
 	p_tok1 = get_prec_table_index(token_type);
+	printf("token TYPE na ZACATKU :::::::: %d \n",token_type );
+/*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
+/**/			printf("SSSSSSSSSSSSSss\n");
+				if (is_err(set_type_promene(token_type))!=NO_ERROR){
+/**/				return set_type_promene(token_type);
+/**/			}
+/**/		}
+/**/		else if (token_type==TYPE_IDENTIFIER){
+/**/			int IDecko=zjisti_co_je_id();
+/**/			if (is_err(set_type_promene(IDecko))!=NO_ERROR){
+/**/				return set_type_promene(IDecko);
+/**/			}
+/**/			skipni_get_token=true;
+/**/
+/*frida*/	}
 	printf("%d\n",p_tok1 );
 	printf("%d\n",top_stack );
 	while(!(top_stack == I_DOLLAR && p_tok1 == I_DOLLAR)){
@@ -454,7 +468,7 @@ int rule_expresion_pusher(){
 			}
 			p_tok1 = get_prec_table_index(token_type);
 			remember_token_type=token_type;
-/*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type<=TYPE_INT && token_type>=TYPE_STRING)){
+/*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
 /**/			printf("SSSSSSSSSSSSSss\n");
 				if (is_err(set_type_promene(token_type))!=NO_ERROR){
 /**/				return set_type_promene(token_type);
@@ -465,6 +479,7 @@ int rule_expresion_pusher(){
 /**/			if (is_err(set_type_promene(IDecko))!=NO_ERROR){
 /**/				return set_type_promene(IDecko);
 /**/			}
+				printf("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIiii\n");
 /**/			skipni_get_token=true;
 /**/
 /*frida*/	}
@@ -496,7 +511,7 @@ int rule_expresion_pusher(){
 			}
 			p_tok1 = get_prec_table_index(token_type);
 			remember_token_type=token_type;
-/*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type<=TYPE_INT && token_type>=TYPE_STRING)){
+/*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
 /**/			if (is_err(set_type_promene(token_type))!=NO_ERROR){
 /**/				return set_type_promene(token_type);
 /**/			}
@@ -587,10 +602,11 @@ int zjisti_co_je_id(){
 					last_id_func=true;
 					uzavorkovana_funkce=false;
 					volani_func++;
-					result = rule_param_counter();
-
-					if(is_err(result)!=NO_ERROR){
-						return result;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
+					if (token_type==LEFT_BRACKET || (token_type<=TYPE_IDENTIFIER && token_type>=TYPE_STRING)){
+						result = rule_param_counter();
+						if(is_err(result)!=NO_ERROR){
+							return result;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
+						}
 					}
 					data->pocet_parametru=pocitac_param_u_call;
 					pocitac_param_u_call = temp1;
@@ -645,11 +661,12 @@ int zjisti_co_je_id(){
 					last_id_func=true;
 					uzavorkovana_funkce=false;
 					volani_func++;
-					result = rule_param_counter();
-
-					if(is_err(result)!=NO_ERROR){
-						return result;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
-					}
+					if (token_type==LEFT_BRACKET || (token_type<=TYPE_IDENTIFIER && token_type>=TYPE_STRING)){
+						result = rule_param_counter();
+						if(is_err(result)!=NO_ERROR){
+							return result;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
+						}
+					}	
 					if(pocitac_param_u_call!=0){
 						return ERROR_5;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
 						
