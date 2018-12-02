@@ -20,7 +20,8 @@ int last_KW=WITHOUT_TYPE;//posledni pouzite klicove slovo ( je to pouze pro kont
 int deep_in_program = 0;//pocitadlo pro hloubku programu ( kvuli while,if apod)
 char *last_function;//nazev posledni pouzite funkce
 int last_if_counter=0;//pocitadlo pro ify
-
+bool skipni_get_token=false;//pro preskoceni nahrani dalsiho token (jedná se o to, že když máme identifier tak musíme načítat i token za tím, tak abychom vlastně jeden token nezahodil)
+int remember_token_type;//slouží pro uložení typu předešlého tokenu
 // simulace pravidla <program> -> <st-list>
 int program(){
 	if(!already_init){
@@ -440,18 +441,36 @@ int rule_expresion_pusher(){
 			SPush(&stack, p_tok1);
 			print_stack(&stack);
 
-			if(token_type == I_DOLLAR){
-				token_type = END_OF_FILE;
+			if(remember_token_type == I_DOLLAR){
+				remember_token_type = END_OF_FILE;
 				printf("ANO\n");
 				return ERROR_IDK;
 				break;
-			}else if (set_token_and_return() == END_OF_FILE){
+			}else if (set_token_and_return() == END_OF_FILE || token_type == THEN ||
+/*frida*/		 token_type == DO || token_type== END_OF_LINE || token_type == COMMA){
+
 				token_type = I_DOLLAR;
 				printf("I_DOLLAR na konci\n");
 			}
 			p_tok1 = get_prec_table_index(token_type);
-			
+			remember_token_type=token_type;
+/*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type<=TYPE_INT && token_type>=TYPE_STRING)){
+/**/			printf("SSSSSSSSSSSSSss\n");
+				if (is_err(set_type_promene(token_type))!=NO_ERROR){
+/**/				return set_type_promene(token_type);
+/**/			}
+/**/		}
+/**/		else if (token_type==TYPE_IDENTIFIER){
+/**/			int IDecko=zjisti_co_je_id();
+/**/			if (is_err(set_type_promene(IDecko))!=NO_ERROR){
+/**/				return set_type_promene(IDecko);
+/**/			}
+/**/			skipni_get_token=true;
+/**/
+/*frida*/	}
+
 		}else if(prior[top_stack][p_tok1]==R){//Redukuji
+			printf("BUDU REDUKOVAT: %d %d\n", top_stack,p_tok1);
 			if(top_of_stack_prepared_for_reduction(&stack)){
 				printf("redukuji :D stack:%d expr:%d\n",top_stack,p_tok1);
 			}else{
@@ -461,6 +480,42 @@ int rule_expresion_pusher(){
 			
 		}else if(prior[top_stack][p_tok1]==E){
 			printf("Equal :D\n");
+
+			SPush(&stack, p_tok1);
+
+			if(remember_token_type == I_DOLLAR){
+				remember_token_type = END_OF_FILE;
+				printf("ANO\n");
+				return ERROR_IDK;
+				break;
+			}else if (set_token_and_return() == END_OF_FILE || token_type == THEN ||
+/*frida*/		 token_type == DO || token_type== END_OF_LINE || token_type == COMMA){
+
+				token_type = I_DOLLAR;
+				printf("I_DOLLAR na konci\n");
+			}
+			p_tok1 = get_prec_table_index(token_type);
+			remember_token_type=token_type;
+/*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type<=TYPE_INT && token_type>=TYPE_STRING)){
+/**/			if (is_err(set_type_promene(token_type))!=NO_ERROR){
+/**/				return set_type_promene(token_type);
+/**/			}
+/**/		}
+/**/		else{
+/**/			int IDecko=zjisti_co_je_id();
+/**/			if (is_err(set_type_promene(IDecko))!=NO_ERROR){
+/**/				return set_type_promene(IDecko);
+/**/			}
+/**/			skipni_get_token=true;
+/**/
+/*frida*/	}
+
+			if(top_of_stack_prepared_for_reduction(&stack)){
+				printf("equal :D stack:%d expr:%d\n",top_stack,p_tok1);
+			}else{
+				printf("FATAL ERROR WHEN EQUAL\n");
+				return ERROR_IDK;
+			}
 		}
 
 
@@ -468,19 +523,41 @@ int rule_expresion_pusher(){
 		printf("%d %d\n",top_stack,p_tok1 );
 		printf("------------------------------------------------------\n");
 	}
-	printf("KONEC řádku\n");
+	printf("KONEC řádku, tisknu vysledny zasobnik:\n");
+	print_stack(&stack);
 	porovnavani_counter=0;
 	result = rule_expr();
 	return result;
 
 }
 
+
+int set_type_promene(int typu){
+	if (typu==TYPE_STRING && (typ_promene == WITHOUT_TYPE || typ_promene == TYPE_STRING)){
+		typ_promene=TYPE_STRING; 
+	}
+	else if(typu==TYPE_INT && typ_promene!=TYPE_FLOAT && (typ_promene == WITHOUT_TYPE || typ_promene == TYPE_INT )){
+		typ_promene=TYPE_INT;
+	}
+	else if(typu==TYPE_FLOAT && (typ_promene == WITHOUT_TYPE || typ_promene == TYPE_FLOAT || typ_promene == TYPE_INT)){
+		typ_promene=TYPE_FLOAT;
+	}
+	else if(typu==TYPE_INT && typ_promene==TYPE_FLOAT){
+		typ_promene=TYPE_FLOAT;
+	}
+	else if(typu==WITHOUT_TYPE){
+		return NO_ERROR;
+	}
+	else{
+
+		return ERROR_4; // jde o kombinovaní prace se stringy a čísly
+	}
+	return NO_ERROR;
+}
 int zjisti_co_je_id(){
 	int result = NO_ERROR;
 			tKey k = ((char*)token->attribute.string.word);
 			//tady bych chtěl nějak udělat abych si vyčetl data te proměné, když to nebude již založeno takže asi něco jako tData data1=htRead(&h_tabulka,k) ??? a nebo ještě alokace nebo jak ?? -- zeptat se kuby !!!
-
-
 			if(htRead(h_tabulka,k) == NULL){//Pokud nebyla nalezena polozka, tak ji vloz
 				tmp=token;
 				if(set_token_and_return() == EQUALS){ 	
@@ -498,8 +575,9 @@ int zjisti_co_je_id(){
 					htInsert(h_tabulka, k, data );
 					return typ_promene;
 				}
-				else{
+				else{				
 					//zavolani jeste nedeklarovane funkce QQ
+					printf("QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQqq\n");
 					int temp1 = pocitac_param_u_call;
 					int temp2 = brackets_counter;
 					bool temp3 = uzavorkovana_funkce;
@@ -533,6 +611,9 @@ int zjisti_co_je_id(){
 					last_id_func=true;	
 					data->funkce=true;
 					htInsert(h_tabulka, k, data );
+					printf("AAAAAAAAAAAAAAAAAAAAAAAa %d \n",typ_promene);
+
+					return typ_promene;
 				}
 			}else{
 				tData *data2 = malloc(sizeof(tData));
@@ -885,6 +966,7 @@ return -1;
 }
 
 
+
 int rule_expr(){
 	int result;
 	int typ = TYPE_INT;
@@ -1001,10 +1083,16 @@ void init_parser(){
 }
 
 int set_token_and_return(){
-	get_token(token);
-	token_type = token->type;
-	//printf("%d\n",token_type );
-	return token_type;
+	if (skipni_get_token){
+		skipni_get_token=false;
+		return token_type;
+	}else{
+		get_token(token);
+		token_type = token->type;
+		//printf("%d\n",token_type );
+		return token_type;
+	}
+
 }
 
 int pop_token(){
@@ -1039,27 +1127,29 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 
 		break;
 		case 3:
-			//E->E+E
-			if(stack->a[(stack->top)] == NONTERM && stack->a[(stack->top)-2] == NONTERM){
+			if(stack->a[(stack->top)] == NONTERM && stack->a[(stack->top)-2] == NONTERM){ // E -> E + E a E -> E - E
 				if(stack->a[(stack->top)-1] == I_PLUS_MINUS){printf("AAAAA\n");
 					do_E_rule(stack);
 					printf("Zasobnik po provedení pravidla E->E+E\n");
 					return true;
-				}
-				if(stack->a[(stack->top)-1] == I_MUL_DIV){
+				}else if(stack->a[(stack->top)-1] == I_MUL_DIV){ // E -> E * E a E -> E / E
+					do_E_rule(stack);
+					printf("Zasobnik po provedení pravidla E->E+E\n");
+					return true;
+				}else if(stack->a[(stack->top)-1] == I_REL_OP){ // E -> E relacni-operator E 
 					do_E_rule(stack);
 					printf("Zasobnik po provedení pravidla E->E+E\n");
 					return true;
 				}
 			//E->(E)
 			}else if(stack->a[(stack->top)] == I_RIGHT_BRACKET && stack->a[(stack->top)-2] == I_LEFT_BRACKET){
-
+				do_E_rule(stack);
+				print_stack(stack);
 			}else{
 				printf("Chyba při kontrole vrcholu zásobníku\n");
 				return false;
 			}
 			
-
 		break;
 		default:
 			printf("Něco se podělalo\n");
