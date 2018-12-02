@@ -17,14 +17,10 @@
 #define ERROR_6 506
 #define ERROR_9 507
 #define ERROR_99 508
-#define ERROR_IDK 50
-
-
-
+#define ERROR_IDK 509
 
 #define ALREADY_DEF 530
 #define WITHOUT_TYPE 531
-
 
 
 int program();
@@ -40,10 +36,12 @@ int rule_definice_promene();
 int rule_def();
 int set_token_and_return();
 int pop_token();
+bool top_of_stack_prepared_for_reduction(tStack *stack);
+void do_E_rule(tStack *stack);
+int get_rule_from_stack(int symbol_count);
 int rule_expr();
 int is_err(int ret);
 bool is_operator();
 bool is_num();
 void init_parser();
-bool top_of_stack_prepared_for_reduction();
-int get_rule_from_stack(int symbol_count);
+void print_stack(tStack *stack);

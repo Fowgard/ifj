@@ -400,9 +400,11 @@ int rule_expresion_pusher(){
 
 	bool is_last_NONTERM = false;
 	p_tok1 = get_prec_table_index(token_type);
-	while((token_type != END_OF_LINE)&&(token_type != END_OF_FILE)){
+	printf("%d\n",p_tok1 );
+	printf("%d\n",top_stack );
+	while(!(top_stack == I_DOLLAR && p_tok1 == I_DOLLAR)){
 		printf("CYKLUS, TOKEN: %d\n", token_type);
-		printf("%d %d\n",STop(&stack), p_tok1 );
+		//printf("%d %d\n",STop(&stack), p_tok1 );
 
 		//Pokud je na vrcholu nonterm, nepracuje se s nontermem ale symbolem pred nim (viz prednaska 8)
 		if(STop(&stack)==NONTERM){
@@ -410,27 +412,48 @@ int rule_expresion_pusher(){
 			is_last_NONTERM = true;
 			SPop(&stack);
 			top_stack = STop(&stack);
+			//printf("QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ%d\n", top_stack);
+			SPush(&stack, NONTERM);
 		}else{			
 			top_stack = STop(&stack);
 			is_last_NONTERM = false;
 		}
+
+		if((top_stack == I_DOLLAR) && (p_tok1 == I_DOLLAR)){
+			printf("KONEC VÝRAZU!\n");
+			break;
+		}
+
 		if(prior[top_stack][p_tok1]==N){
-			printf("ERROR: nedefinovaná operace v tabulce priorit!!!%d %d\n",STop(&stack), p_tok1);
+			printf("ERROR: nedefinovaná operace v tabulce priorit!!!%d %d\n",top_stack, p_tok1);
 			return ERROR_IDK; //NEVIIIIIIIIIIIIIIIIIIIIIM JAKÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝ ERROR
-		}else if(prior[top_stack][p_tok1]==S){
+		}else if(prior[top_stack][p_tok1]==S){//Shiftuji
 			printf("BUDU shiftovat\n");
-			SPush(&stack, S);
-			if(is_last_NONTERM){
+			if(STop(&stack) != top_stack){//Na vrcholu zasobiku je NONTERM
+				SPop(&stack);
+				SPush(&stack, S);
 				SPush(&stack, NONTERM);
-			}
+				top_stack = p_tok1; //Protoze jsme shiftovali, tak na vrcholu zasobniku NEMUZE byt I_DOLLAR
+			}else{
+				SPush(&stack, S);				
+			}			
 			SPush(&stack, p_tok1);
 			print_stack(&stack);
 
-			p_tok1 = get_prec_table_index(set_token_and_return());
+			if(token_type == I_DOLLAR){
+				token_type = END_OF_FILE;
+				printf("ANO\n");
+				return ERROR_IDK;
+				break;
+			}else if (set_token_and_return() == END_OF_FILE){
+				token_type = I_DOLLAR;
+				printf("I_DOLLAR na konci\n");
+			}
+			p_tok1 = get_prec_table_index(token_type);
 			
-		}else if(prior[top_stack][p_tok1]==R){
-			if(top_of_stack_prepared_for_reduction()){
-				printf("redukuji :D\n");
+		}else if(prior[top_stack][p_tok1]==R){//Redukuji
+			if(top_of_stack_prepared_for_reduction(&stack)){
+				printf("redukuji :D stack:%d expr:%d\n",top_stack,p_tok1);
 			}else{
 				printf("FATAL ERROR WHEN REDUCING\n");
 				return ERROR_IDK;
@@ -442,7 +465,8 @@ int rule_expresion_pusher(){
 
 
 	//print_stack(&stack);
-
+		printf("%d %d\n",top_stack,p_tok1 );
+		printf("------------------------------------------------------\n");
 	}
 	printf("KONEC řádku\n");
 	porovnavani_counter=0;
@@ -450,6 +474,7 @@ int rule_expresion_pusher(){
 	return result;
 
 }
+
 int zjisti_co_je_id(){
 	int result = NO_ERROR;
 			tKey k = ((char*)token->attribute.string.word);
@@ -993,10 +1018,17 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 	int i;
 	for(i = 0; ;i++){
 		if(stack->a[(stack->top)-i] == S){
+			printf("%d:%d\n",i, stack->a[(stack->top)-i]);
+
+			print_stack(stack);
 			break;
 		}
 	}
-	switch(get_rule_from_stack(i)){
+
+	printf("I JE::::::::::::::::%d\n", i);
+	//switch(get_rule_from_stack(i)){
+	switch(i){
+		// E->i
 		case 1:
 			SPop(stack);
 			SPop(stack);
@@ -1006,14 +1038,47 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 			return true;
 
 		break;
+		case 3:
+			//E->E+E
+			if(stack->a[(stack->top)] == NONTERM && stack->a[(stack->top)-2] == NONTERM){
+				if(stack->a[(stack->top)-1] == I_PLUS_MINUS){printf("AAAAA\n");
+					do_E_rule(stack);
+					printf("Zasobnik po provedení pravidla E->E+E\n");
+					return true;
+				}
+				if(stack->a[(stack->top)-1] == I_MUL_DIV){
+					do_E_rule(stack);
+					printf("Zasobnik po provedení pravidla E->E+E\n");
+					return true;
+				}
+			//E->(E)
+			}else if(stack->a[(stack->top)] == I_RIGHT_BRACKET && stack->a[(stack->top)-2] == I_LEFT_BRACKET){
+
+			}else{
+				printf("Chyba při kontrole vrcholu zásobníku\n");
+				return false;
+			}
+			
+
+		break;
 		default:
 			printf("Něco se podělalo\n");
+			return false;
 
 		break;
 	}
 
 	printf("KONČÍM FUNKCI top_of_stack_prepared_for_reduction\n");
 	return true;
+}
+
+void do_E_rule(tStack *stack){
+	SPop(stack);
+	SPop(stack);	
+	SPop(stack);	
+	SPop(stack);	
+	SPush(stack, NONTERM);			
+	print_stack(stack);
 }
 
 int get_rule_from_stack(int symbol_count){
