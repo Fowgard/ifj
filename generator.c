@@ -52,6 +52,91 @@ void gen_while_start(int condition)
 
 }*/
 
+	// i<0?
+	CAT_INST("LT LF@!relation LF@!1 int@0");
+	CAT_INST("JUMPIFEQ $substr_end LF@!relation bool@true");
+	// i>lengt?
+	CAT_INST("GT LF@!relation LF@!1 LF@!length");
+	CAT_INST("JUMPIFEQ $substr_end LF@!relation bool@true");
+
+	CAT_INST("LT LF@!relation LF@!2 int@0");
+	CAT_INST("JUMPIFEQ $substr_end LF@!relation bool@true");
+	CAT_INST("MOVE LF@!retvar string@");
+
+	CAT_INST("EQ LF@!relation LF@!2 int@0");
+	CAT_INST("JUMPIFEQ $substr_end LF@!relation bool@true");
+	// n > length(s) - i
+	CAT_INST("DEFVAR LF@!n");
+	CAT_INST("MOVE LF@!n LF@!length");
+	CAT_INST("SUB LF@!n LF@!n LF@!1");
+	
+	CAT_INST("GT LF@!relation LF@!2 LF@!n");
+	CAT_INST("JUMPIFEQ $n_is_max LF@!relation bool@true");
+	CAT_INST("JUMP $find_substr");
+	CAT_INST("LABEL $n_is_max");
+	CAT_INST("MOVE LF@!2 LF@!n");//nastaveni na maximalni velikost n
+	
+	CAT_INST("LABEL $find_substr");
+	CAT_INST("DEFVAR LF@!i");
+	CAT_INST("MOVE LF@!i LF@!1");
+	CAT_INST("DEFVAR LF@!symbol");
+	CAT_INST("DEFVAR LF@!cond");
+	CAT_INST("LABEL $substr_loop");
+	
+	CAT_INST("GETCHAR LF@!symbol LF@!0 LF@!i");
+	CAT_INST("CONCAT LF@!retvar LF@!retvar LF@!symbol");
+	CAT_INST("ADD LF@!i LF@!i int@1");
+	CAT_INST("SUB LF@!2 LF@!2 int@1");//celkova delka stringu se zkrati, musime od n odecist 1
+	CAT_INST("GT LF@!cond LF@!2 int@0");
+	CAT_INST("JUMPIFEQ $substr_loop LF@!cond bool@true");
+	CAT_INST("LABEL $substr_end");
+	CAT_INST("POPFRAME");
+	CAT_INST("RETURN");
+
+}	
+
+void gen_ord()
+{
+	CAT_INST("LABEL $ord");
+	gen_frame_retvar();
+	CAT_INST("MOVE LF@!retvar nil@nil");
+	CAT_INST("DEFVAR LF@!relation");
+	// i<0?
+	CAT_INST("LT LF@!relation LF@!1 int@0");
+	CAT_INST("JUMPIFEQ $ord_end LF@!relation bool@true");
+	CAT_INST("DEFVAR LF@!length");
+	//volani funkce length
+	CAT_INST("CREATEFRAME");
+	CAT_INST("DEFVAR TF@!0");
+	CAT_INST("MOVE TF@!0 LF@!0");
+	CAT_INST("CALL $length");
+	CAT_INST("MOVE LF@!length TF@!retvar");
+	CAT_INST("SUB LF@!length LF@!length int@1")
+	// i>length?
+	CAT_INST("GT LF@!relation LF@!1 LF@!length");
+	CAT_INST("JUMPIFEQ ord_end LF@!relation bool@true");
+	CAT_INST("STRI2INT LF@!retval LF@!0 LF@!1");
+	CAT_INST("LABEL $ord_end");
+	gen_def_end();
+}
+
+void gen_chr()
+{
+	CAT_INST("LABEL $chr");
+	gen_frame_retvar();
+	CAT_INST("DEFVAR LF@!relation");
+	CAT_INST("LT LF@!relation LF@!0 int@0");
+	CAT_INST("JUMPIFEQ $chr_error LF@!relation bool@true");
+	CAT_INST("GT LF@!relation LF@!0 int@255");
+	CAT_INST("JUMPIFEQ $chr_error LF@!relation bool@true");
+	CAT_INST("INT2CHAR LF@!retvar LF@!0");
+	gen_def_end();
+	CAT_INST("LABEL $chr_error");
+	CAT_INST("CLEARS");
+	CAT_INST("EXIT 58");
+}
+
+void gen_length()
 void gen_frame_retvar()
 {
 	CAT_INST("CREATEFRAME");
