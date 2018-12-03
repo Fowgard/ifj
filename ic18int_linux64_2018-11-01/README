@@ -1,0 +1,10 @@
+ic18int - referencni interpret ciloveho jazyka IFJcode18
+verze 2018-09-24, rebuild 2018-11-01
+
+Prubezne doplnovane informace najdete na Wiki predmetu IFJ na strance ic18int.
+
+CHANGES:
+  * 2018-09-19:
+    * provedeno otestovani a zverejneni ve WIS   
+  * 2018-09-24:
+    * pridana instrukce EXIT, oprava ceny instrukce IDIV 

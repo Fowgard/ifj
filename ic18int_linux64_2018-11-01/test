@@ -3,22 +3,43 @@ DEFVAR GF@!result
 DEFVAR GF@!tmp1
 DEFVAR GF@!tmp2
 DEFVAR GF@!tmp3
-JUMP $$main
+
+CREATEFRAME
+DEFVAR TF@!0
+DEFVAR TF@!1
+DEFVAR TF@!2
+
+MOVE TF@!0 string@ahoj
+MOVE TF@!1 int@0
+MOVE TF@!2 int@3
+CALL $substr
+WRITE TF@!retvar
+JUMP $konec
+
+
 LABEL $length
+
 PUSHFRAME
 DEFVAR LF@!retvar
 STRLEN LF@!retvar LF@!0
 POPFRAME
 RETURN
+
 LABEL $substr
+
+
 PUSHFRAME
+
 DEFVAR LF@!retvar
 MOVE LF@!retvar nil@nil
 DEFVAR LF@!length
 CREATEFRAME
 DEFVAR TF@!0
 MOVE TF@!0 LF@!0
+
+
 CALL $length
+
 MOVE LF@!length TF@!retvar
 DEFVAR LF@!relation
 LT LF@!relation LF@!length int@0
@@ -57,3 +78,7 @@ JUMPIFEQ $substr_loop LF@!cond bool@true
 LABEL $substr_end
 POPFRAME
 RETURN
+
+
+
+LABEL $konec
