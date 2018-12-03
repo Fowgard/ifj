@@ -13,6 +13,7 @@ void gen_main_end();
 void gen_def_start(char *f_name);
 void gen_def_end();
 void gen_var_from_token(token_t *token);
+void gen_frame_retvar();
 
 
 

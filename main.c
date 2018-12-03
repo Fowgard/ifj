@@ -39,7 +39,6 @@ int main(int argc, char *argv[])
 	int resul = parse;
 	*/
 
-	generator_init();
 	printf("ZACATEK parseru\n");
 	program();
 	printf("KONEC parseru\n");

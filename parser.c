@@ -1,5 +1,5 @@
 #include "parser.h"
- 
+  
 int token_type; //aktualni token
 char *token_attribute; //atribut aktualniho tokenu
 token_t *token = NULL;
@@ -26,6 +26,7 @@ int remember_token_type;//slouží pro uložení typu předešlého tokenu
 int program(){
 	if(!already_init){
 		init_parser();
+		generator_init();
 	}
 	int res; // vyhodnocovaní chyb pro parser
 	set_token_and_return();
@@ -61,7 +62,9 @@ int program(){
 				call_generator(res);
 			}
 		break; 
-		case END_OF_FILE:	
+		case END_OF_FILE:
+			gen_main_end();
+			print_output();	
 			return NO_ERROR;
 		break;
 		case END_OF_LINE:
@@ -84,7 +87,6 @@ int program(){
 void call_generator(int resu){
 	if (is_err(resu)!=NO_ERROR){
 		printf("vyskytl se error: %d \n", resu );
-		free_all();
 		exit(-1);
 	}
 	else{
@@ -428,7 +430,6 @@ int rule_expresion_pusher(){
 			is_last_NONTERM = true;
 			SPop(&stack);
 			top_stack = STop(&stack);
-			//printf("QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ%d\n", top_stack);
 			SPush(&stack, NONTERM);
 		}else{			
 			top_stack = STop(&stack);
@@ -439,7 +440,7 @@ int rule_expresion_pusher(){
 			printf("KONEC VÝRAZU!\n");
 			break;
 		}
-
+// 
 		if(prior[top_stack][p_tok1]==N){
 			printf("ERROR: nedefinovaná operace v tabulce priorit!!!%d %d\n",top_stack, p_tok1);
 			return ERROR_IDK; //NEVIIIIIIIIIIIIIIIIIIIIIM JAKÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝ ERROR
@@ -589,7 +590,6 @@ int zjisti_co_je_id(){
 					data->funkce=false;
 					data->type=typ_promene;
 					htInsert(h_tabulka, k, data );
-					
 					return typ_promene;
 				}
 				else{				
@@ -651,7 +651,6 @@ int zjisti_co_je_id(){
 					htInsert(h_tabulka, k, data );
 					return typ_promene;
 				}else if(data2->funkce){
-					data2->pocet_parametru;
 					int temp1 = pocitac_param_u_call;
 					int temp2 = brackets_counter;
 					bool temp3 = uzavorkovana_funkce;
@@ -680,8 +679,8 @@ int zjisti_co_je_id(){
 					else{
 						brackets_counter = temp2;
 					}
-					if (uzavorkovana_funkce== false && temp3 == true){
-						uzavorkovana_funkce== false;
+					if (uzavorkovana_funkce == false && temp3 == true){
+						uzavorkovana_funkce = false;
 					}else{
 						uzavorkovana_funkce = temp3;
 					}
@@ -1190,28 +1189,6 @@ void do_E_rule(tStack *stack){
 	print_stack(stack);
 }
 
-int get_rule_from_stack(int symbol_count){
-
-	printf("JSEM VE FUNKCI get_rule_from_stack\n");
-	switch(symbol_count){
-		case 1:
-			if((&stack)->a[((&stack)->top)-1] == S)
-				if((&stack)->a[((&stack)->top)-0] == I_DATA)
-					printf("KONČÍM FUNKCI get_rule_from_stack\n");
-					return 1;
-
-		break;
-
-
-		case 3:
-
-
-
-		break;
-	}
-}
-
-int rules1[]={{NONTERM}};
 
 void print_stack(tStack *stack){
 

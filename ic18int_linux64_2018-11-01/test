@@ -10,8 +10,8 @@ DEFVAR TF@!1
 DEFVAR TF@!2
 
 MOVE TF@!0 string@ahoj
-MOVE TF@!1 int@0
-MOVE TF@!2 int@3
+MOVE TF@!1 int@1
+MOVE TF@!2 int@2
 CALL $substr
 WRITE TF@!retvar
 JUMP $konec
@@ -34,6 +34,7 @@ DEFVAR LF@!retvar
 MOVE LF@!retvar nil@nil
 DEFVAR LF@!length
 CREATEFRAME
+BREAK
 DEFVAR TF@!0
 MOVE TF@!0 LF@!0
 
@@ -61,6 +62,7 @@ SUB LF@!n LF@!n LF@!1
 GT LF@!relation LF@!2 LF@!n
 JUMPIFEQ $n_is_max LF@!relation bool@true
 JUMP $find_substr
+
 LABEL $n_is_max
 MOVE LF@!2 LF@!n
 LABEL $find_substr
