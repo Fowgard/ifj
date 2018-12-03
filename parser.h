@@ -46,3 +46,4 @@ bool is_operator();
 bool is_num();
 void init_parser();
 void print_stack(tStack *stack);
+void check_data_type();

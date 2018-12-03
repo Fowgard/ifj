@@ -1,10 +1,14 @@
 #include "parser.h"
   
+extern int gen_to_main;
+
 int token_type; //aktualni token
 char *token_attribute; //atribut aktualniho tokenu
 token_t *token = NULL;
 token_t *tmp = NULL;//zjisteni dalsiho tokenu -> z toho budem vedet jestli se vola o volani nedefinovane funkce, nebo jestli se jedna o definici proměne
 tStack stack; //Zasobnik pro vyrazy
+Token_Stack values; //Zasobnik pro tokeny
+tStack operatory; //Zasobnik pro hodnoty
 tHTable* h_tabulka; // Hashovaci tabulka
 int brackets_counter; //Leve zavorky ++, prave --
 int param_counter; //pocitadlo parametru pri definici funkce
@@ -22,11 +26,15 @@ char *last_function;//nazev posledni pouzite funkce
 int last_if_counter=0;//pocitadlo pro ify
 bool skipni_get_token=false;//pro preskoceni nahrani dalsiho token (jedná se o to, že když máme identifier tak musíme načítat i token za tím, tak abychom vlastně jeden token nezahodil)
 int remember_token_type;//slouží pro uložení typu předešlého tokenu
+bool generator_popl_token = false;
+bool int2float=false;
+int posledni_pop_index=0;
 // simulace pravidla <program> -> <st-list>
 int program(){
 	if(!already_init){
 		init_parser();
 		generator_init();
+		gen_to_main = 1;
 	}
 	int res; // vyhodnocovaní chyb pro parser
 	set_token_and_return();
@@ -398,14 +406,15 @@ int rule_expresion_pusher(){
 	SInit(&tmp_s);
 	int result=NO_ERROR;
 	int p_tok1;
+	int2float=false;
 	int top_stack = I_DOLLAR;
+	
 	SPush(&stack, top_stack);
-
+	generator_popl_token=false;
 	bool is_last_NONTERM = false;
 	p_tok1 = get_prec_table_index(token_type);
 	printf("token TYPE na ZACATKU :::::::: %d \n",token_type );
 /*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
-/**/			printf("SSSSSSSSSSSSSss\n");
 				if (is_err(set_type_promene(token_type))!=NO_ERROR){
 /**/				return set_type_promene(token_type);
 /**/			}
@@ -438,6 +447,10 @@ int rule_expresion_pusher(){
 
 		if((top_stack == I_DOLLAR) && (p_tok1 == I_DOLLAR)){
 			printf("KONEC VÝRAZU!\n");
+			gen_stack_pop("GF","result");
+			create_frame();
+			gen_call("print");
+			gen_clear();
 			break;
 		}
 // 
@@ -453,7 +466,28 @@ int rule_expresion_pusher(){
 				top_stack = p_tok1; //Protoze jsme shiftovali, tak na vrcholu zasobniku NEMUZE byt I_DOLLAR
 			}else{
 				SPush(&stack, S);				
-			}			
+			}		
+			if(p_tok1 == I_DATA){
+				if(token_type >= TYPE_IDENTIFIER && token_type <= TYPE_STRING){
+					TPush(&values, *token);
+				}
+			/*	else if(token_type == TYPE_FLOAT){
+					SPush(&values, token->attribute.decimal);
+				}
+				else if(token_type == TYPE_IDENTIFIER){
+					SPush(&values, token->attribute.string->word);
+				}
+				else if(token_type == TYPE_STRING){
+					SPush(&values, token->attribute.string->word);
+				}*/
+				printf("TISKNU HODNOTYYYYyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy%d\n",token_type);
+				SPush(&operatory, 0);
+				print_token_stack(&values);
+			}
+			else if((token_type>=PLUS && token_type <= MUL) || (token_type>=COMPARE&& token_type <= NOTEQUAL)){
+				SPush(&operatory, token_type);
+		  	}
+	
 			SPush(&stack, p_tok1);
 			print_stack(&stack);
 
@@ -465,14 +499,14 @@ int rule_expresion_pusher(){
 			}else if (set_token_and_return() == END_OF_FILE || token_type == THEN ||
 /*frida*/		 token_type == DO || token_type== END_OF_LINE || token_type == COMMA){
 
-				token_type = I_DOLLAR;
+				remember_token_type = I_DOLLAR;
 				printf("I_DOLLAR na konci\n");
 			}
+
 			p_tok1 = get_prec_table_index(token_type);
 			remember_token_type=token_type;
 /*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
-/**/			printf("SSSSSSSSSSSSSss\n");
-				if (is_err(set_type_promene(token_type))!=NO_ERROR){
+/**/			if (is_err(set_type_promene(token_type))!=NO_ERROR){
 /**/				return set_type_promene(token_type);
 /**/			}
 /**/		}
@@ -481,7 +515,6 @@ int rule_expresion_pusher(){
 /**/			if (is_err(set_type_promene(IDecko))!=NO_ERROR){
 /**/				return set_type_promene(IDecko);
 /**/			}
-				printf("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIiii\n");
 /**/			skipni_get_token=true;
 /**/
 /*frida*/	}
@@ -508,7 +541,7 @@ int rule_expresion_pusher(){
 			}else if (set_token_and_return() == END_OF_FILE || token_type == THEN ||
 /*frida*/		 token_type == DO || token_type== END_OF_LINE || token_type == COMMA){
 
-				token_type = I_DOLLAR;
+				remember_token_type = I_DOLLAR;
 				printf("I_DOLLAR na konci\n");
 			}
 			p_tok1 = get_prec_table_index(token_type);
@@ -518,7 +551,7 @@ int rule_expresion_pusher(){
 /**/				return set_type_promene(token_type);
 /**/			}
 /**/		}
-/**/		else{
+/**/		else if (token_type==TYPE_IDENTIFIER){
 /**/			int IDecko=zjisti_co_je_id();
 /**/			if (is_err(set_type_promene(IDecko))!=NO_ERROR){
 /**/				return set_type_promene(IDecko);
@@ -540,6 +573,7 @@ int rule_expresion_pusher(){
 		printf("%d %d\n",top_stack,p_tok1 );
 		printf("------------------------------------------------------\n");
 	}
+
 	printf("KONEC řádku, tisknu vysledny zasobnik:\n");
 	print_stack(&stack);
 	porovnavani_counter=0;
@@ -1095,6 +1129,8 @@ void init_parser(){
 	token = malloc(sizeof(token_t));
 	brackets_counter = 0;
 	SInit(&stack);
+	SInit(&values);
+	SInit(&operatory);
 	h_tabulka = (tHTable*) malloc ( sizeof(tHTable) );
 	htInit(h_tabulka);
 	already_init=true;
@@ -1145,16 +1181,64 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 
 		break;
 		case 3:
+
 			if(stack->a[(stack->top)] == NONTERM && stack->a[(stack->top)-2] == NONTERM){ // E -> E + E a E -> E - E
-				if(stack->a[(stack->top)-1] == I_PLUS_MINUS){printf("AAAAA\n");
+
+				check_data_type();
+
+
+			printf("TOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOP:%d\n", posledni_pop_index);
+			printf("TOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOP:%d\n", (&values)->top);
+
+				if (posledni_pop_index>((&values)->top)){
+					switch_stack();
+				}
+				posledni_pop_index=((&values)->top);
+
+					
+				if(stack->a[(stack->top)-1] == I_PLUS_MINUS){
+
+					if((&operatory)->a[((&operatory)->top)-1] == PLUS){
+						SPop (&operatory);
+						SPop (&operatory);	
+						printf("GENERUJI SOUCET\n");
+						gen_stack_add();
+						//gen_stack_pop("GF","result");
+					}
+					else if((&operatory)->a[((&operatory)->top)-1] == MINUS){
+						SPop (&operatory);
+						SPop (&operatory);	
+						printf("GENERUJI ODECET\n");					
+						gen_stack_sub();
+						//gen_stack_pop("GF","result");
+					}
+
 					do_E_rule(stack);
 					printf("Zasobnik po provedení pravidla E->E+E\n");
 					return true;
-				}else if(stack->a[(stack->top)-1] == I_MUL_DIV){ // E -> E * E a E -> E / E
+				}else if(stack->a[(stack->top)-1] == I_MUL_DIV){ // E -> E * E a E -> E / E					
+
+					if((&operatory)->a[((&operatory)->top)-1] == MUL){	
+
+						SPop (&operatory);
+						SPop (&operatory);	
+						printf("GENERUJI NASOBENI\n");				
+						gen_stack_mul();
+						//gen_stack_pop("GF","result");
+					}
+					else if((&operatory)->a[((&operatory)->top)-1] == DIV){	
+						SPop (&operatory);
+						SPop (&operatory);	
+						printf("GENERUJI DELENI\n");						
+						gen_stack_idiv();
+						//gen_stack_pop("GF","result");
+					}
+
 					do_E_rule(stack);
 					printf("Zasobnik po provedení pravidla E->E+E\n");
 					return true;
 				}else if(stack->a[(stack->top)-1] == I_REL_OP){ // E -> E relacni-operator E 
+
 					do_E_rule(stack);
 					printf("Zasobnik po provedení pravidla E->E+E\n");
 					return true;
@@ -1179,6 +1263,69 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 	printf("KONČÍM FUNKCI top_of_stack_prepared_for_reduction\n");
 	return true;
 }
+void check_data_type(){
+
+	if (!int2float){
+		if ((TTop(&values)).type == TYPE_FLOAT && generator_popl_token==true){
+			int2float=true;
+			gen_int2float();
+			gen_stack_push(TPop(&values));
+		}
+		else if((TTop(&values)).type == TYPE_FLOAT && generator_popl_token==false){
+			int2float=true;
+			gen_stack_push(TPop(&values));
+			generator_popl_token = true;
+			posledni_pop_index=((&values)->top);
+			if ((TTop(&values)).type == TYPE_INT){
+				gen_stack_push(TPop(&values));
+				gen_int2float();
+			}
+			else{
+				gen_stack_push(TPop(&values));
+			}
+		}
+		else{
+			gen_stack_push(TPop(&values));
+			if (!generator_popl_token){
+				posledni_pop_index=((&values)->top);
+				if((TTop(&values)).type == TYPE_FLOAT && int2float==false ){
+					gen_int2float();
+					gen_stack_push(TPop(&values));
+					int2float=true;
+					generator_popl_token=true;
+				}
+				else{
+					gen_stack_push(TPop(&values));
+					generator_popl_token=true;
+				}
+			}
+		}
+	}
+	else if (int2float==true && (TTop(&values)).type == TYPE_INT){
+		gen_stack_push(TPop(&values));
+		gen_int2float();
+	}
+	else{
+		if((TTop(&values)).type == TYPE_FLOAT){
+			int2float=true;
+		}
+		gen_stack_push(TPop(&values));
+
+		if (!generator_popl_token){
+			posledni_pop_index=((&values)->top);
+			if((TTop(&values)).type == TYPE_FLOAT && int2float==false ){
+				gen_int2float();
+				gen_stack_push(TPop(&values));
+				int2float=true;
+				generator_popl_token=true;
+			}
+			else{
+				gen_stack_push(TPop(&values));
+				generator_popl_token=true;
+			}
+		}
+	}	
+}
 
 void do_E_rule(tStack *stack){
 	SPop(stack);
@@ -1193,9 +1340,15 @@ void do_E_rule(tStack *stack){
 void print_stack(tStack *stack){
 
 	printf("TISKNU OBSAH ZÁSOBNÍKU:\n");
-	for(
-		int i = 0;i< (stack)->top+1;i++){
+	for(int i = 0;i< (stack)->top+1;i++){
 		printf("%d ", (stack)->a[i]);
 	}
-	printf("\nKONEC ZÁSOBNÍKU:\n");
+	printf("\nKONEC ZÁSOBNÍKU\n");
+}
+void print_token_stack(Token_Stack *st){
+	printf("TISKNU OBSAH ZÁSOBNÍKU TOKENůůů:\n");
+	for(int i = 0;i< (st)->top+1;i++){
+		printf("%d ", (st)->a[i].type);
+	}
+	printf("\nKONEC ZÁSOBNÍKU\n");
 }

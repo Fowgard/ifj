@@ -27,6 +27,7 @@ typedef union //union smi mit pouze jednu z hodnot
 typedef struct Token {
    	int type;
   	attribute_t attribute;
+  	
 } token_t;
 
 void token_init(token_t *token);

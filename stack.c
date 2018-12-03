@@ -61,3 +61,66 @@ bool SEmpty (tStack *Stack)
 {
   return(Stack->top==0);
 }	
+
+//Nasleduje stack pro tokeny
+//--------------------------------------------------------------------
+
+void TInit (Token_Stack *Stack ) 
+/*   ------
+** Inicializace zásobníku.
+**/
+{
+	Stack->top = 0;  
+}	
+
+void TPush (Token_Stack *Stack, token_t token)
+/*   ------
+** Vloží hodnotu na vrchol zásobníku.
+**/
+{ 
+                 /* Při implementaci v poli může dojít k přetečení zásobníku. */
+  if (Stack->top==MAXSTACK) 
+    printf("Chyba: Došlo k přetečení zásobníku s ukazateli!\n");
+  else {  
+		Stack->top++;  
+		Stack->a[Stack->top] = token;
+	}
+}	
+
+token_t TPop (Token_Stack *Stack)
+/*         --------
+** Odstraní prvek z vrcholu zásobníku a současně vrátí jeho hodnotu.
+**/
+{
+                            /* Operace nad prázdným zásobníkem způsobí chybu. */
+	if (Stack->top==0)  {
+		printf("Chyba: Došlo k podtečení zásobníku s ukazateli!\n");
+		exit(99);
+	}	
+	else {
+		return (Stack->a[Stack->top--]);
+	}	
+}
+
+token_t TTop (Token_Stack *Stack)
+/*         --------
+** Vrati prvek z vrcholu zasobniku, ale neodstrani ho jako SPop.
+**/
+{
+                            /* Operace nad prázdným zásobníkem způsobí chybu. */
+	if (Stack->top==0)  {
+		printf("Chyba: Došlo k podtečení zásobníku s ukazateli!\n");
+		exit(99);
+	}	
+	else {
+		return (Stack->a[Stack->top]);
+	}	
+}
+
+bool TEmpty (Token_Stack *Stack)
+/*   -------
+** Je-li zásobník prázdný, vrátí hodnotu true.
+**/
+{
+  return(Stack->top==0);
+}	

@@ -3,44 +3,25 @@ DEFVAR GF@!result
 DEFVAR GF@!tmp1
 DEFVAR GF@!tmp2
 DEFVAR GF@!tmp3
+JUMP $$main
 
-CREATEFRAME
-DEFVAR TF@!0
-DEFVAR TF@!1
-DEFVAR TF@!2
-
-MOVE TF@!0 string@ahoj
-MOVE TF@!1 int@1
-MOVE TF@!2 int@2
-CALL $substr
-WRITE TF@!retvar
-JUMP $konec
-
-
-LABEL $length
-
+LABEL $print
 PUSHFRAME
 DEFVAR LF@!retvar
-STRLEN LF@!retvar LF@!0
+WRITE GF@!result
+MOVE LF@!retvar nil@nil
 POPFRAME
 RETURN
 
 LABEL $substr
-
-
 PUSHFRAME
-
 DEFVAR LF@!retvar
 MOVE LF@!retvar nil@nil
 DEFVAR LF@!length
 CREATEFRAME
-BREAK
 DEFVAR TF@!0
 MOVE TF@!0 LF@!0
-
-
 CALL $length
-
 MOVE LF@!length TF@!retvar
 DEFVAR LF@!relation
 LT LF@!relation LF@!length int@0
@@ -62,7 +43,6 @@ SUB LF@!n LF@!n LF@!1
 GT LF@!relation LF@!2 LF@!n
 JUMPIFEQ $n_is_max LF@!relation bool@true
 JUMP $find_substr
-
 LABEL $n_is_max
 MOVE LF@!2 LF@!n
 LABEL $find_substr
@@ -81,6 +61,87 @@ LABEL $substr_end
 POPFRAME
 RETURN
 
+LABEL $chr
+PUSHFRAME
+DEFVAR LF@!retvar
+DEFVAR LF@!relation
+LT LF@!relation LF@!0 int@0
+JUMPIFEQ $chr_error LF@!relation bool@true
+GT LF@!relation LF@!0 int@255
+JUMPIFEQ $chr_error LF@!relation bool@true
+INT2CHAR LF@!retvar LF@!0
+POPFRAME
+RETURN
+LABEL $chr_error
+CLEARS
+EXIT int@49
+
+LABEL $ord
+PUSHFRAME
+DEFVAR LF@!retvar
+MOVE LF@!retvar nil@nil
+DEFVAR LF@!relation
+LT LF@!relation LF@!1 int@0
+JUMPIFEQ $ord_end LF@!relation bool@true
+DEFVAR LF@!length
+CREATEFRAME
+DEFVAR TF@!0
+MOVE TF@!0 LF@!0
+CALL $length
+MOVE LF@!length TF@!retvar
+SUB LF@!length LF@!length int@1
+GT LF@!relation LF@!1 LF@!length
+JUMPIFEQ ord_end LF@!relation bool@true
+STRI2INT LF@!retval LF@!0 LF@!1
+LABEL $ord_end
+POPFRAME
+RETURN
+
+LABEL $length
+PUSHFRAME
+DEFVAR LF@!retvar
+STRLEN LF@!retvar LF@!0
+POPFRAME
+RETURN
+
+LABEL $inputs
+PUSHFRAME
+DEFVAR LF@!retvar
+READ LF@!retvar string
+POPFRAME
+RETURN
+
+LABEL $inputi
+PUSHFRAME
+DEFVAR LF@!retvar
+READ LF@!retvar int
+POPFRAME
+RETURN
+
+LABEL $inputf
+PUSHFRAME
+DEFVAR LF@!retvar
+READ LF@!retvar float
+POPFRAME
+RETURN
 
 
-LABEL $konec
+# main:
+LABEL $$main
+CREATEFRAME
+PUSHFRAME
+
+PUSHS int@2
+PUSHS int@2
+MULS
+PUSHS int@55
+SUBS
+POPS GF@!result
+CREATEFRAME
+CALL $print
+CLEARS
+
+POPFRAME
+CLEARS
+EXIT int@0
+

@@ -146,7 +146,7 @@ void gen_chr()
 	gen_def_end();
 	CAT_INST("LABEL $chr_error");
 	CAT_INST("CLEARS");
-	CAT_INST("EXIT 58");
+	CAT_INST("EXIT int@49");
 	
 	CAT_INST("");
 
@@ -168,7 +168,7 @@ void gen_print()
 	CAT_INST("LABEL $print");
 	gen_frame_retvar();
 	CAT_INST("WRITE GF@!result");
-	CAT_INST("MOVE LF@!retvar nil");
+	CAT_INST("MOVE LF@!retvar nil@nil");
 	gen_def_end();
 	CAT_INST("");
 
@@ -225,7 +225,13 @@ void gen_builtins()
 	gen_inputf();
 
 }
+void switch_stack(){
+	CAT_INST("POPS GF@!tmp1");
+	CAT_INST("POPS GF@!tmp2");
 
+	CAT_INST("PUSHS GF@!tmp1");
+	CAT_INST("PUSHS GF@!tmp2");
+}
 void generator_init()
 {
 	code_rest = malloc(sizeof(lexem_t));
@@ -241,7 +247,7 @@ void generator_init()
 		//funkce pro ukoncovani
 	}
 	lexem_init(code_main);	
-	if ((output_file = fopen("output.txt", "w")) == NULL)
+	if ((output_file = fopen("./asd/test", "w")) == NULL)
 	{	
 		fprintf(stderr, "Nepodarilo se otevrit soubor.\n");
 		exit(-1);
@@ -294,38 +300,38 @@ void gen_main_end()
 	CAT_INST("");
 	CAT_INST("POPFRAME");// je potreba?
 	CAT_INST("CLEARS");
-	CAT_INST("EXIT 0");//  je potreba?
+	CAT_INST("EXIT int@0");//  je potreba?
 	CAT_INST("");
 }
 
-void gen_val_from_token(token_t *token)
+void gen_val_from_token(token_t token)
 {
-	if(token->type == TYPE_IDENTIFIER)
+	if(token.type == TYPE_IDENTIFIER)
 	{
 		CAT_STR("LF@!");
-		CAT_STR(token->attribute.string->word);
+		CAT_STR(token.attribute.string->word);
 	}
-	else if(token->type == TYPE_INT)
+	else if(token.type == TYPE_INT)
 	{
 		CAT_STR("int@");
-		CAT_NUM(token->attribute.integer);
+		CAT_NUM(token.attribute.integer);
 	}
-	else if(token->type == TYPE_FLOAT)
+	else if(token.type == TYPE_FLOAT)
 	{
 		CAT_STR("float@");
-		CAT_FLOAT(token->attribute.decimal);
+		CAT_FLOAT(token.attribute.decimal);
 	}
-	else if(token->type == TYPE_STRING)
+	else if(token.type == TYPE_STRING)
 	{
 		CAT_STR("string@");
 		int i = 0;
-		char symbol = token->attribute.string->word[i]; 
+		char symbol = token.attribute.string->word[i]; 
 		while(symbol != '\0')
 		{
 			if (symbol == '#' || symbol == '\\' || symbol < 33 || (!isprint(symbol)))
 			{
 				CAT_STR("\\");
-				CAT_ESC_SEQUENCE(token->attribute.string->word[i]);
+				CAT_ESC_SEQUENCE(token.attribute.string->word[i]);
 			}
 			else
 			{
@@ -333,7 +339,7 @@ void gen_val_from_token(token_t *token)
 			}
 
 			i++;
-			symbol = token->attribute.string->word[i];
+			symbol = token.attribute.string->word[i];
 		}
 	}
 	else
@@ -408,7 +414,7 @@ void gen_assign_from_call(char *v_name)
 	CAT_INST(" TF@!retvar");
 }
 
-void gen_argument(token_t *arg, int order)
+void gen_argument(token_t arg, int order)
 {
 	CAT_STR("DEFVAR TF@!");
 	CAT_NUM(order);
@@ -433,7 +439,7 @@ void gen_parametr(char *p_name, int order)
 	CAT_INST("");
 }
 
-void gen_stack_push(token_t *token)
+void gen_stack_push(token_t token)
 {
 	CAT_STR("PUSHS ");
 	gen_val_from_token(token);
@@ -452,6 +458,7 @@ void gen_stack_pop(char *frame, char *v_name)
 
 void gen_stack_add()
 {
+
 	CAT_INST("ADDS");
 }
 
@@ -503,6 +510,15 @@ void gen_stack_or()
 void gen_stack_not()
 {
 	CAT_INST("NOTS");
+}
+
+void gen_int2float()
+{
+	CAT_INST("INT2FLOATS");
+}
+void gen_clear()
+{
+	CAT_INST("CLEARS");
 }
 
 void gen_stack_concatanate()//konkatenace nelze na zasobniku, poziti pomocnych promennych
