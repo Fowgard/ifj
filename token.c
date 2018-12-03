@@ -25,21 +25,20 @@ void lexem_putchar(lexem_t *lexem, char symbol)
 {
 	lexem->word[lexem->lenght] = symbol;
 	lexem->lenght++;
-	lexem->word = realloc(lexem->word, (lexem->lenght+1)*sizeof(char));
+	lexem->word = realloc(lexem->word, (lexem->lenght+1));
 	if (lexem->word == NULL)
 	{
 		fprintf(stderr, "nepodarilo se realokovat lexem");
 		exit(99);
 	}
-	lexem->word[lexem->lenght+1] = '\0';
+	lexem->word[lexem->lenght] = '\0';
 }
 
 void lexem_putstr(lexem_t *lexem, const char *str)
 {
-	int str_lenght = strlen(str);
-	int new_lenght = lexem->lenght + str_lenght + 1;
+	int new_lenght = lexem->lenght + strlen(str);
 
-	lexem->word = realloc(lexem->word, new_lenght);
+	lexem->word = realloc(lexem->word, (new_lenght+1)*sizeof(char));
 	if(lexem->word == NULL)
 	{
 		fprintf(stderr, "nepodarilo se realokovat lexem");
@@ -47,32 +46,26 @@ void lexem_putstr(lexem_t *lexem, const char *str)
 	}
 
 	lexem->lenght = new_lenght;
-
 	strcat(lexem->word, str);
-	lexem->word[lexem->lenght] = '\0';
 }
 
 void lexem_del_word(lexem_t *lexem)
 {
 	lexem->lenght = 0;
-	lexem->word = realloc(lexem->word, (lexem->lenght+1)*sizeof(char));
+	lexem->word = realloc(lexem->word, sizeof(char));
 	if (lexem->word == NULL)
 	{
 		fprintf(stderr, "nepodarilo se realokovat lexem");
 		exit(99);
 	}
-	lexem->word[lexem->lenght+1] = '\0';
+	lexem->word[lexem->lenght] = '\0';
 }
 
 
 
 void token_init(token_t *token)
 {
-
-	//token->attribute = NULL; TODO implementovat hash table
 	token->type = 0;
-	//token->attribute = NULL;
-
 }
 
 void set_type(token_t *token, int type)
@@ -80,7 +73,7 @@ void set_type(token_t *token, int type)
 	token->type = type;
 }
 
-int keyword_check(token_t *token, lexem_t *lexem)
+void keyword_check(token_t *token, lexem_t *lexem)
 {
 	if (!strcmp(lexem->word, "def"))
 		token->type = DEF;
@@ -100,13 +93,22 @@ int keyword_check(token_t *token, lexem_t *lexem)
 		token->type = THEN;
 	else if (!strcmp(lexem->word, "while"))
 		token->type = WHILE;
-	else if (!strcmp(lexem->word, "=begin"))
-		token->type = COMMENT;
-	else if (!strcmp(lexem->word, "=end"))
-		token->type = COMMENT_END;
+	else if (!strcmp(lexem->word, "inputs"))
+		token->type = INPUTS;
+	else if (!strcmp(lexem->word, "inputi"))
+		token->type = INPUTI;
+	else if (!strcmp(lexem->word, "inputf"))
+		token->type = INPUTF;
+	else if (!strcmp(lexem->word, "print"))
+		token->type = PRINT;
+	else if (!strcmp(lexem->word, "lenght"))
+		token->type = LENGHT;
+	else if (!strcmp(lexem->word, "substr"))
+		token->type = SUBSTR;
+	else if (!strcmp(lexem->word, "ord"))
+		token->type = ORD;
+	else if (!strcmp(lexem->word, "chr"))
+		token->type = CHR;
 	else
 		token->type = TYPE_IDENTIFIER;
-
-	return 1;
-
 }

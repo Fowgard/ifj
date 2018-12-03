@@ -1,6 +1,7 @@
-#include <stdlib.h>
-#include <string.h>
+#ifndef SYMTABLE_H
+#define SYMTABLE_H
 #include <stdbool.h>
+#include "scanner.h"
 #include "token.h"
 
 
@@ -15,9 +16,12 @@ typedef char* tKey;
 
 /* typ obsahu (například cena zboží) */
 typedef struct tData{
-	int type;
-	lexem_t lexem;
-	bool definovano;
+	int type; 	//typ co vrací funkce / proměná
+	lexem_t *lexem; 
+	bool definovano; // jestli byla funkce definovana
+	int pocet_parametru; 
+	bool funkce; // rozhoduje jestli je funkce nebo ne ( když ne tak je proměna)
+	int lenght; // delka u stringu
 
 }tData;
 
@@ -53,3 +57,4 @@ void htDelete ( tHTable* ptrht, tKey key );
 void htClearAll ( tHTable* ptrht );
 
 
+#endif

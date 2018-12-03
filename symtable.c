@@ -85,7 +85,7 @@ tData* htRead ( tHTable* ptrht, tKey key ) {
 
 	tHTItem* tmp = htSearch(ptrht, key);
 	if (tmp != NULL)
-		return &tmp->data;
+		return tmp->data;
 	return NULL;
 }
 
@@ -144,6 +144,8 @@ void htClearAll ( tHTable* ptrht ) {
 		{
 			tmp2 = tmp;
 			tmp = tmp->ptrnext;
+			free_lexem(tmp2->data->lexem);
+			free(tmp2->data);
 			free(tmp2);
 		}
 		(*ptrht)[i] = NULL;
