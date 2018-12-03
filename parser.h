@@ -30,6 +30,7 @@ int rule_preset_fuctions();
 int rule_print();
 int check_end();
 int rule_expresion_pusher();
+int set_type_promene();
 int zjisti_co_je_id();
 int rule_param_counter();
 int rule_definice_promene();
