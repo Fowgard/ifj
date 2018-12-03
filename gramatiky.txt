@@ -1,0 +1,38 @@
+
+<prog> -> <statement_list>
+<statement_list> -> <statement> EOL <statement_list>
+<statement_list> -> ε
+
+<body> -> EOL <body>
+<body> -> EOF
+<body> -> FUNCTION_ID 
+<body> -> EXPRESSION EOL <body>
+<body> -> <statement> <body>
+<body> -> ε
+
+
+<func_params> -> <params>
+<func_params> -> (<params>)
+
+<params> -> ε
+<params> -> <param> <params_lot>
+<params_lot> -> , <param>
+<params_lot> -> ε
+
+<param> -> ID
+<param> -> EXPRESSION
+
+<statement> -> if (EXPRESSION) then EOL <body> <else> end EOL 
+<statement> -> ID = EXPRESSION
+<statement> -> EXPRESSION
+<statement> -> while (EXPRESSION) do EOL <body> end EOL
+
+<statement> -> EOL <prog>
+<statement> -> EOF
+<statement> -> def FUNCTION_ID (<func_params>) EOL <body> end
+<statement> -> FUNCTION_ID 
+<statement> -> EXPRESSION EOL <prog>
+<statement> -> FUNCTION_ID 
+
+<else> -> ε
+<else> -> else EOL <body>
