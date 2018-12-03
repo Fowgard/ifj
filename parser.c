@@ -29,6 +29,9 @@ int remember_token_type;//slouží pro uložení typu předešlého tokenu
 bool generator_popl_token = false;
 bool int2float=false;
 int posledni_pop_index=0;
+char *nazev_posledni_ID;
+bool pouziti_relacnich_operatoru;
+int skipovani; //0-ne 1-připrav se 2-skipni
 // simulace pravidla <program> -> <st-list>
 int program(){
 	if(!already_init){
@@ -405,21 +408,24 @@ int rule_expresion_pusher(){
 	tStack tmp_s;
 	SInit(&tmp_s);
 	int result=NO_ERROR;
+	printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
+	printf("token TYPE na ZACATKU :::::::: %d \n",token_type );
+
 	int p_tok1;
 	int2float=false;
 	int top_stack = I_DOLLAR;
-	
+	pouziti_relacnich_operatoru = false;
 	SPush(&stack, top_stack);
 	generator_popl_token=false;
 	bool is_last_NONTERM = false;
 	p_tok1 = get_prec_table_index(token_type);
-	printf("token TYPE na ZACATKU :::::::: %d \n",token_type );
 /*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
 				if (is_err(set_type_promene(token_type))!=NO_ERROR){
 /**/				return set_type_promene(token_type);
 /**/			}
 /**/		}
 /**/		else if (token_type==TYPE_IDENTIFIER){
+
 /**/			int IDecko=zjisti_co_je_id();
 /**/			if (is_err(set_type_promene(IDecko))!=NO_ERROR){
 /**/				return set_type_promene(IDecko);
@@ -446,11 +452,12 @@ int rule_expresion_pusher(){
 		}
 
 		if((top_stack == I_DOLLAR) && (p_tok1 == I_DOLLAR)){
+
 			printf("KONEC VÝRAZU!\n");
 			gen_stack_pop("GF","result");
 			create_frame();
 			gen_call("print");
-			gen_clear();
+			//gen_clear(); cisteni zasobníku
 			break;
 		}
 // 
@@ -469,6 +476,7 @@ int rule_expresion_pusher(){
 			}		
 			if(p_tok1 == I_DATA){
 				if(token_type >= TYPE_IDENTIFIER && token_type <= TYPE_STRING){
+					printf("asdasaaaaa\n");
 					TPush(&values, *token);
 				}
 			/*	else if(token_type == TYPE_FLOAT){
@@ -480,11 +488,22 @@ int rule_expresion_pusher(){
 				else if(token_type == TYPE_STRING){
 					SPush(&values, token->attribute.string->word);
 				}*/
-				printf("TISKNU HODNOTYYYYyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy%d\n",token_type);
 				SPush(&operatory, 0);
 				print_token_stack(&values);
 			}
-			else if((token_type>=PLUS && token_type <= MUL) || (token_type>=COMPARE&& token_type <= NOTEQUAL)){
+			else if((token_type>=PLUS && token_type <= MUL) || (token_type >= COMPARE&& token_type <= NOTEQUAL)){
+
+				if (pouziti_relacnich_operatoru){
+					skipovani++;
+					generator_popl_token=false;
+					pouziti_relacnich_operatoru=false;
+				}
+				if (token_type >= COMPARE&& token_type <= NOTEQUAL){
+					pouziti_relacnich_operatoru=true;
+				}
+				if (!pouziti_relacnich_operatoru && skipovani == 0){
+					skipovani++;
+				}
 				SPush(&operatory, token_type);
 		  	}
 	
@@ -502,7 +521,6 @@ int rule_expresion_pusher(){
 				remember_token_type = I_DOLLAR;
 				printf("I_DOLLAR na konci\n");
 			}
-
 			p_tok1 = get_prec_table_index(token_type);
 			remember_token_type=token_type;
 /*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
@@ -573,13 +591,14 @@ int rule_expresion_pusher(){
 		printf("%d %d\n",top_stack,p_tok1 );
 		printf("------------------------------------------------------\n");
 	}
+	if (!generator_popl_token){
+		gen_stack_push(TPop(&values));
 
+	}
 	printf("KONEC řádku, tisknu vysledny zasobnik:\n");
 	print_stack(&stack);
 	porovnavani_counter=0;
-	result = rule_expr();
-	return result;
-
+	return NO_ERROR;
 }
 
 
@@ -608,14 +627,15 @@ int set_type_promene(int typu){
 int zjisti_co_je_id(){
 	int result = NO_ERROR;
 			tKey k = ((char*)token->attribute.string->word);
+			nazev_posledni_ID=k;
 			//tady bych chtěl nějak udělat abych si vyčetl data te proměné, když to nebude již založeno takže asi něco jako tData data1=htRead(&h_tabulka,k) ??? a nebo ještě alokace nebo jak ?? -- zeptat se kuby !!!
 			if(htRead(h_tabulka,k) == NULL){//Pokud nebyla nalezena polozka, tak ji vloz
-				tmp=token;
 				if(set_token_and_return() == EQUALS){ 	
 					//zde se bude jednat o definici nove promene, musí se nainicializovat na nil, potom se do ní musí přidat hodnota která je za "="
 					tData *data = malloc(sizeof(tData));
 					data->type=NIL;
-					htInsert(h_tabulka, k, data );			
+					htInsert(h_tabulka, k, data );
+					gen_var(k);			
 					result=rule_definice_promene();
 					if(is_err(result)!=NO_ERROR){
 						return result;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
@@ -818,26 +838,6 @@ int rule_definice_promene(){
 	typ_promene=WITHOUT_TYPE;//není to zatím zadny typ
 	set_token_and_return(); 
 	switch(token_type){
-		case TYPE_STRING:
-			typ_promene=TYPE_STRING;
-			printf("musíme přidat do proměné ten string co je za tím \n");
-			if(set_token_and_return()==END_OF_LINE || token_type==END_OF_FILE){
-				return NO_ERROR;
-			}
-			else if (token_type == PLUS){
-				if (set_token_and_return()==TYPE_STRING){
-					result=rule_definice_promene();
-					return result;
-				}
-				else{
-					return ERROR_2;
-				}
-			}
-			else{
-				return ERROR_2;
-			}
-			// co tady může všechno nasledovat vlastně ?? sčítaní stringu a nebo EOL ? 
-		break;
 		case TYPE_IDENTIFIER:
 			typa = zjisti_co_je_id();
 			if(typa==TYPE_STRING){
@@ -876,6 +876,7 @@ int rule_definice_promene(){
 		break;
 		case TYPE_INT:
 		case TYPE_FLOAT:
+		case TYPE_STRING:
 			result=rule_expresion_pusher();
 			return result;
 		break;
@@ -1172,6 +1173,7 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 	switch(i){
 		// E->i
 		case 1:
+
 			SPop(stack);
 			SPop(stack);
 			SPush(stack, NONTERM);
@@ -1182,22 +1184,13 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 		break;
 		case 3:
 
-			if(stack->a[(stack->top)] == NONTERM && stack->a[(stack->top)-2] == NONTERM){ // E -> E + E a E -> E - E
-
-				check_data_type();
-
-
-			printf("TOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOP:%d\n", posledni_pop_index);
-			printf("TOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOP:%d\n", (&values)->top);
-
-				if (posledni_pop_index>((&values)->top)){
-					switch_stack();
-				}
-				posledni_pop_index=((&values)->top);
-
-					
+			if(stack->a[(stack->top)] == NONTERM && stack->a[(stack->top)-2] == NONTERM){ // E -> E + E a E -> E - E			
 				if(stack->a[(stack->top)-1] == I_PLUS_MINUS){
-
+					check_data_type();
+					if (posledni_pop_index>((&values)->top)){
+						switch_stack();
+					}
+					posledni_pop_index=((&values)->top);
 					if((&operatory)->a[((&operatory)->top)-1] == PLUS){
 						SPop (&operatory);
 						SPop (&operatory);	
@@ -1217,7 +1210,11 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 					printf("Zasobnik po provedení pravidla E->E+E\n");
 					return true;
 				}else if(stack->a[(stack->top)-1] == I_MUL_DIV){ // E -> E * E a E -> E / E					
-
+					check_data_type();
+					if (posledni_pop_index>((&values)->top)){
+						switch_stack();
+					}
+					posledni_pop_index=((&values)->top);
 					if((&operatory)->a[((&operatory)->top)-1] == MUL){	
 
 						SPop (&operatory);
@@ -1238,7 +1235,63 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 					printf("Zasobnik po provedení pravidla E->E+E\n");
 					return true;
 				}else if(stack->a[(stack->top)-1] == I_REL_OP){ // E -> E relacni-operator E 
+					if (skipovani==2){
+						skipovani=0;
+					}else{
+						check_data_type();	
+					}
+					if (posledni_pop_index>((&values)->top)){
+						switch_stack();
+					}
+					posledni_pop_index=((&values)->top);
+					if((&operatory)->a[((&operatory)->top)-1] == COMPARE){	
 
+						SPop (&operatory);
+						SPop (&operatory);	
+						printf("GENERUJI NASOBENI\n");				
+						gen_stack_eq();
+						//gen_stack_pop("GF","result");
+					}
+					if((&operatory)->a[((&operatory)->top)-1] == LOE){	
+
+						SPop (&operatory);
+						SPop (&operatory);	
+						printf("GENERUJI NASOBENI\n");				
+						gen_less_or_equal();
+						//gen_stack_pop("GF","result");
+					}
+					if((&operatory)->a[((&operatory)->top)-1] == LESSTHAN){	
+
+						SPop (&operatory);
+						SPop (&operatory);	
+						printf("GENERUJI NASOBENI\n");				
+						gen_stack_less_than();
+						//gen_stack_pop("GF","result");
+					}
+					if((&operatory)->a[((&operatory)->top)-1] == MOE){	
+
+						SPop (&operatory);
+						SPop (&operatory);	
+						printf("GENERUJI NASOBENI\n");				
+						gen_more_or_equal();
+						//gen_stack_pop("GF","result");
+					}
+					if((&operatory)->a[((&operatory)->top)-1] == MORETHAN){	
+
+						SPop (&operatory);
+						SPop (&operatory);	
+						printf("GENERUJI NASOBENI\n");				
+						gen_stack_more_than();
+						//gen_stack_pop("GF","result");
+					}
+					if((&operatory)->a[((&operatory)->top)-1] == NOTEQUAL){	
+
+						SPop (&operatory);
+						SPop (&operatory);	
+						printf("GENERUJI NASOBENI\n");				
+						gen_not_equal();
+						//gen_stack_pop("GF","result");
+					}
 					do_E_rule(stack);
 					printf("Zasobnik po provedení pravidla E->E+E\n");
 					return true;

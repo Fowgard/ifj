@@ -460,7 +460,7 @@ void get_token(token_t *token)
 				if(symbol == '\"')
 				{
 					token->type = TYPE_STRING;
-					token->attribute.string->word = lexem->word;
+					token->attribute.string = lexem;
 					//printf("LITERAL: %s\n", token->attribute.string.word);
 					return;
 				}

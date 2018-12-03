@@ -492,6 +492,37 @@ void gen_stack_less_than()
 	CAT_INST("LTS");
 }
 
+void gen_less_or_equal()
+{
+			CAT_INST("POPS GF@!tmp1");
+			CAT_INST("POPS GF@!tmp2");
+			CAT_INST("PUSHS GF@!tmp2");
+			CAT_INST("PUSHS GF@!tmp1");
+			CAT_INST("LTS");
+			CAT_INST("PUSHS GF@!tmp2");
+			CAT_INST("PUSHS GF@!tmp1");
+			CAT_INST("EQS");
+			CAT_INST("ORS");
+}
+void gen_more_or_equal()
+{
+
+			CAT_INST("POPS GF@!tmp1");
+			CAT_INST("POPS GF@!tmp2");
+			CAT_INST("PUSHS GF@!tmp2");
+			CAT_INST("PUSHS GF@!tmp1");
+			CAT_INST("GTS");
+			CAT_INST("PUSHS GF@!tmp2");
+			CAT_INST("PUSHS GF@!tmp1");
+			CAT_INST("EQS");
+			CAT_INST("ORS");
+			
+}
+void gen_not_equal(){
+	CAT_INST("EQS");
+	CAT_INST("NOTS");
+}
+
 void gen_stack_more_than()
 {
 	CAT_INST("GTS");

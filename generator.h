@@ -15,6 +15,8 @@ void gen_def_end();
 void gen_var_from_token(token_t token);
 void gen_frame_retvar();
 void switch_stack();
+void gen_less_or_equal();
+void gen_more_or_equal();
 
 
 
