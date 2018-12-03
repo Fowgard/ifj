@@ -25,7 +25,7 @@ void lexem_putchar(lexem_t *lexem, char symbol)
 {
 	lexem->word[lexem->lenght] = symbol;
 	lexem->lenght++;
-	lexem->word = realloc(lexem->word, (lexem->lenght+1)*sizeof(char));
+	lexem->word = realloc(lexem->word, (lexem->lenght+1));
 	if (lexem->word == NULL)
 	{
 		fprintf(stderr, "nepodarilo se realokovat lexem");

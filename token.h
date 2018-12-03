@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-  
+   
 
 
 typedef struct Lexem {
@@ -17,7 +17,7 @@ typedef union //union smi mit pouze jednu z hodnot
 {
 	int integer;//hodnota kdyy je int
 	double decimal;
-	lexem_t string;//hodnota kdyz je string
+	lexem_t *string;//hodnota kdyz je string
 	int keyword;//konstanta pro keyword
 	int nil;//bool hodnota(je nebo neni to nil)
 	
@@ -49,11 +49,7 @@ void lexem_del_word(lexem_t *lexem);
 
 #define END_OF_FILE 10
 #define END_OF_LINE 11
-#define END_OF_TOKEN 12
 #define NIL 13
-#define SUCCESS 14
-#define WRONG_NUMBER_FORMAT 15
-#define KONSTANT 16
 
 
 #define DEF 20

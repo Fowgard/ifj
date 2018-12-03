@@ -83,6 +83,7 @@ int program(){
 void call_generator(int resu){
 	if (is_err(resu)!=NO_ERROR){
 		printf("vyskytl se error: %d \n", resu );
+		free_all();
 		exit(-1);
 	}
 	else{
@@ -477,7 +478,7 @@ int rule_expresion_pusher(){
 
 int zjisti_co_je_id(){
 	int result = NO_ERROR;
-			tKey k = ((char*)token->attribute.string.word);
+			tKey k = ((char*)token->attribute.string->word);
 			//tady bych chtěl nějak udělat abych si vyčetl data te proměné, když to nebude již založeno takže asi něco jako tData data1=htRead(&h_tabulka,k) ??? a nebo ještě alokace nebo jak ?? -- zeptat se kuby !!!
 
 
@@ -496,6 +497,7 @@ int zjisti_co_je_id(){
 					data->funkce=false;
 					data->type=typ_promene;
 					htInsert(h_tabulka, k, data );
+					
 					return typ_promene;
 				}
 				else{
@@ -763,7 +765,7 @@ int rule_def(){
 			}
 			else{
 
-				tKey k = ((char*)token->attribute.string.word);
+				tKey k = ((char*)token->attribute.string->word);
 				last_function=k;
 				tData *data2 = malloc(sizeof(tData));
 				data2=htRead(h_tabulka,k);

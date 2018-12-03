@@ -164,7 +164,7 @@ void gen_val_from_token(token_t *token)
 	if(token->type == TYPE_IDENTIFIER)
 	{
 		CAT_STR("LF@!");
-		CAT_STR(token->attribute.string.word);
+		CAT_STR(token->attribute.string->word);
 	}
 	else if(token->type == TYPE_INT)
 	{
@@ -180,13 +180,13 @@ void gen_val_from_token(token_t *token)
 	{
 		CAT_STR("string@");
 		int i = 0;
-		char symbol = token->attribute.string.word[i]; 
+		char symbol = token->attribute.string->word[i]; 
 		while(symbol != '\0')
 		{
 			if (symbol == '#' || symbol == '\\' || symbol < 33 || (!isprint(symbol)))
 			{
 				CAT_STR("\\");
-				CAT_ESC_SEQUENCE(token->attribute.string.word[i]);
+				CAT_ESC_SEQUENCE(token->attribute.string->word[i]);
 			}
 			else
 			{
@@ -194,7 +194,7 @@ void gen_val_from_token(token_t *token)
 			}
 
 			i++;
-			symbol = token->attribute.string.word[i];
+			symbol = token->attribute.string->word[i];
 		}
 	}
 	else

@@ -1,6 +1,7 @@
 #ifndef SYMTABLE_H
 #define SYMTABLE_H
 #include <stdbool.h>
+#include "scanner.h"
 #include "token.h"
 
 

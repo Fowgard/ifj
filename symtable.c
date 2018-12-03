@@ -144,7 +144,7 @@ void htClearAll ( tHTable* ptrht ) {
 		{
 			tmp2 = tmp;
 			tmp = tmp->ptrnext;
-			free(tmp2->data->lexem);
+			free_lexem(tmp2->data->lexem);
 			free(tmp2->data);
 			free(tmp2);
 		}
