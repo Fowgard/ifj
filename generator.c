@@ -232,8 +232,6 @@ void gen_chr()
 }
 
 void gen_length()
-void gen_frame_retvar()
-void gen_length()
 {
 	CAT_INST("LABEL $length");
 	gen_frame_retvar();
