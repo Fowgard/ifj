@@ -2,11 +2,27 @@
 
 //makra pro jednodussi pirdavani instrukci/kodu
 #define CAT_INST(inst) \
-	(gen_to_main == 1) ? lexem_putstr(code_main, (inst "\n")) : lexem_putstr(code_rest, (inst "\n"))
+	do{ \
+		if (gen_to_main == 1)\
+			lexem_putstr(code_main, (inst "\n"));\
+		else if(gen_to_main == 0)\
+			lexem_putstr(code_rest, (inst "\n"));\
+		else\
+			lexem_putstr(code_while, (inst "\n"));\
+	}while(0)\
 
 
 #define CAT_STR(code_to_add) \
-	(gen_to_main == 1) ? lexem_putstr(code_main, (code_to_add)) : lexem_putstr(code_rest, (code_to_add))
+	do{ \
+		if (gen_to_main == 1)\
+			lexem_putstr(code_main, (code_to_add));\
+		else if(gen_to_main == 0)\
+			lexem_putstr(code_rest, (code_to_add));\
+		else\
+			lexem_putstr(code_while, (code_to_add));\
+	}while(0)\
+
+
 
 #define CAT_NUM(num) \
 	do{ \
@@ -31,12 +47,16 @@
 
 lexem_t *code_main;
 lexem_t *code_rest;
+lexem_t *code_while;
 
 FILE *output_file;
 int gen_to_main;//zatim vse do main 
 						//bude urcovat jestli generovat do mainu(jiny lexem) nebo do zbytku
 
-
+int if_counter = 0;
+int if_block_counter = 0;
+int while_counter = 0;
+int while_block_counter = 0;
 
 void gen_substr()
 {
@@ -247,6 +267,12 @@ void generator_init()
 		//funkce pro ukoncovani
 	}
 	lexem_init(code_main);	
+	code_while = malloc(sizeof(lexem_t));
+	if(code_while == NULL)
+	{
+		//funkce pro ukoncovani
+	}
+	lexem_init(code_while);	
 	if ((output_file = fopen("./asd/test", "w")) == NULL)
 	{	
 		fprintf(stderr, "Nepodarilo se otevrit soubor.\n");
@@ -260,14 +286,23 @@ void generator_init()
 	gen_builtins();
 	
 }
-
+/*
 void pomocna_docasna_funkce()
 {
-	gen_length();
-	gen_substr();
+	gen_if_start();
+	gen_if_start();
+	gen_else();
+	gen_if_end();
+	gen_else();
+	gen_if_end();
+
+	gen_if_start();
+	gen_else();
+	gen_if_end();
+
 	print_output();
 }
-
+*/
 void gen_header()
 {
 	gen_to_main = 0;
@@ -321,6 +356,10 @@ void gen_val_from_token(token_t token)
 		CAT_STR("float@");
 		CAT_FLOAT(token.attribute.decimal);
 	}
+	else if(token.type == NIL)
+	{
+		CAT_STR("nil@nil");
+	}
 	else if(token.type == TYPE_STRING)
 	{
 		CAT_STR("string@");
@@ -355,6 +394,24 @@ void gen_var(char *v_name)
 	CAT_STR("DEFVAR LF@!");
 	CAT_STR(v_name);
 	CAT_INST("");
+
+	CAT_STR("MOVE LF@!");
+	CAT_STR(v_name);
+	CAT_STR(" nil@nil");
+	CAT_INST("");
+}
+void push_false()
+{
+	CAT_INST("PUSHS bool@false");
+}
+void push_true()
+{
+	CAT_INST("PUSHS bool@true");
+}
+
+void gen_move_nil(char *v_name)
+{
+
 }
 
 
@@ -565,75 +622,113 @@ void gen_stack_concatanate()//konkatenace nelze na zasobniku, poziti pomocnych p
 	CAT_INST("PUSHS GF@!tmp3");
 }
 
-void gen_if_start(char *f_name, int depth, int counter)
+void gen_if_start()
 {
+	if_counter++;
 	CAT_INST(" # if");
 	CAT_STR("JUMPIFEQ $");
-	CAT_STR(f_name);
-	CAT_NUM(depth);
-	CAT_NUM(counter);
+	CAT_STR("else");
+	CAT_NUM(if_counter);
+	CAT_STR("!");
+	CAT_NUM(if_block_counter);
+
+
 	CAT_INST(" GF@!result bool@false");
 }
 
-void gen_else(char *f_name, int depth, int counter)
+void gen_else()
 {
 	CAT_INST(" # else");
-	CAT_STR("JMP $");
+	CAT_STR("JUMP $");
 	
-	CAT_STR(f_name);
-	CAT_NUM(depth);
-	CAT_NUM(counter + 1);
-
+	CAT_STR("if_end");
+	CAT_NUM(if_counter);
+	CAT_STR("!");
+	CAT_NUM(if_block_counter);
 	CAT_INST("");
+
+
 	
 	CAT_STR("LABEL $");
-	CAT_STR(f_name);
-	CAT_NUM(depth);
-	CAT_NUM(counter);
+	CAT_STR("else");
+	CAT_NUM(if_counter);
+	CAT_STR("!");
+	CAT_NUM(if_block_counter);
 	CAT_INST("");
 	
 
 }
 
-void gen_if_end(char *f_name, int depth, int counter)
+void gen_if_end()
 {
 	CAT_STR("LABEL $");
-	CAT_STR(f_name);
-	CAT_NUM(depth);
-	CAT_NUM(counter);
+	CAT_STR("if_end");
+	CAT_NUM(if_counter);
+	CAT_STR("!");
+	CAT_NUM(if_block_counter);
+	CAT_INST("");
+	if_counter--;
+	if(if_counter == 0)
+		if_block_counter++;
+}
+
+void result_to_var(char *v_name)
+{
+	CAT_STR("MOVE LF@!");
+	CAT_STR(v_name);
+	CAT_STR(" GF@!result");
 	CAT_INST("");
 }
 
-void gen_while_start(char *f_name, int depth, int counter)
+void gen_while_start()
 {
+	while_counter++;
 	CAT_STR(" # while");
-
-	CAT_STR("LABEL $");
-	CAT_STR(f_name);
-	CAT_NUM(depth);
-	CAT_NUM(counter);
 	CAT_INST("");
+	CAT_STR("LABEL $");
+	CAT_STR("while");
+	CAT_NUM(while_counter);
+	CAT_STR("!");
+	CAT_NUM(while_block_counter);
+	CAT_INST("");
+	
 }
 
-void gen_while_cond_check(char *f_name, int depth, int counter)
+void gen_while_condition()
 {
 	CAT_STR("JUMPIFEQ $");
-	CAT_STR(f_name);
-	CAT_NUM(depth);
-	CAT_NUM(counter);
+	CAT_STR("while_end");
+	CAT_NUM(while_counter);
+	CAT_STR("!");
+	CAT_NUM(while_block_counter);
 	CAT_INST(" GF@!result bool@false");
+
 }
-void gen_while_end(char *f_name, int depth, int counter)
+
+void gen_while_end()
 {
-	CAT_STR("JMP $");
-	CAT_STR(f_name);
-	CAT_NUM(depth);
-	CAT_NUM(counter - 1);
+	if (while_counter == 1){
+		CAT_STR(code_while->word);
+		lexem_del_word(code_while);
+	}
+	CAT_STR("JUMP $");
+	CAT_STR("while");
+	CAT_NUM(while_counter);
+	CAT_STR("!");
+	CAT_NUM(while_block_counter);
 	CAT_INST("");
 
 	CAT_STR("LABEL $");
-	CAT_STR(f_name);
-	CAT_NUM(depth);
-	CAT_NUM(counter);
+	CAT_STR("while_end");
+	CAT_NUM(while_counter);
+	CAT_STR("!");
+	CAT_NUM(while_block_counter);
 	CAT_INST("");
+
+	while_counter--;
+	if(while_counter == 0)
+	{
+		while_block_counter++;
+	}	
+
 }

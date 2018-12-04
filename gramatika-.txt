@@ -1,3 +1,7 @@
+POPS GF@!result
+WRITE GF@!result
+
+
 1. Definice proměných: 
 	-Definuje se tak, že se napíše nazev proměné a "=", tento okamžik je proměná rovna nil
 	- při definici proměné nesmí chybět prava strana ( něco za "=" - může to byt ale proměná kterou definujeme)

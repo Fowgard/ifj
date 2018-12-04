@@ -24,6 +24,8 @@
 
 
 int program();
+void znic_zasobniky();
+int check_id();
 void call_generator(int resu);
 int rule_KW();
 int rule_preset_fuctions();

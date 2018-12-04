@@ -1,7 +1,8 @@
 #include "parser.h"
   
 extern int gen_to_main;
-
+extern int while_counter;
+extern int if_counter;
 int token_type; //aktualni token
 char *token_attribute; //atribut aktualniho tokenu
 token_t *token = NULL;
@@ -32,7 +33,8 @@ int posledni_pop_index=0;
 char *nazev_posledni_ID;
 bool pouziti_relacnich_operatoru;
 int skipovani; //0-ne 1-připrav se 2-skipni
-// simulace pravidla <program> -> <st-list>
+int remember_gen_place=1;
+ // simulace pravidla <program> -> <st-list>
 int program(){
 	if(!already_init){
 		init_parser();
@@ -42,15 +44,8 @@ int program(){
 	int res; // vyhodnocovaní chyb pro parser
 	
 	if (set_token_and_return()!=END){
-		while(!SEmpty(&stack)){
-			SPop(&stack);
-		}
-		while(!SEmpty(&operatory)){
-			SPop(&operatory);
-		}
-		while(!TEmpty(&values)){
-			TPop(&values);
-		}
+		//printf("VYCISTIL SE ZASOBNIK JADADADADADADADADADADAD\n");
+		znic_zasobniky();
 	}
 	switch(token_type){	
 		case LEFT_BRACKET:
@@ -58,13 +53,10 @@ int program(){
 		case TYPE_INT:
 		case TYPE_FLOAT:
 		case TYPE_STRING:
+
 			res = rule_expresion_pusher();
 			if(is_err(res) != NO_ERROR){
-				call_generator(res);
 				return res;
-			}else{
-
-				call_generator(res);
 			}
 		break;
 		case DEF:
@@ -112,13 +104,24 @@ int program(){
 	program();
 	return NO_ERROR;
 }
+void znic_zasobniky(){
+	while(!SEmpty(&stack)){
+		SPop(&stack);
+	}
+	while(!SEmpty(&operatory)){
+		SPop(&operatory);
+	}
+	while(!TEmpty(&values)){
+		TPop(&values);
+	}
+}
 void call_generator(int resu){
 	if (is_err(resu)!=NO_ERROR){
 		printf("vyskytl se error: %d \n", resu );
 		exit(-1);
 	}
 	else{
-		printf("zavolam generator pro posledni radek \n");
+		//printf("zavolam generator pro posledni radek \n");
 	}
 }
 
@@ -136,6 +139,9 @@ int rule_KW(){
 					return result;
 				}
 			}
+			else {
+				return ERROR_2;
+			}
 			//pokud se to rovná then tak podmínka je nil ?? 
 			if(token_type!=THEN){
 				return ERROR_2;
@@ -143,9 +149,16 @@ int rule_KW(){
 			if (set_token_and_return()!=END_OF_LINE){
 				return ERROR_2;
 			}
-			program();//musí se zakázat definice funkce 
+			if (typ_promene!=NIL && typ_promene!=WITHOUT_TYPE && pouziti_relacnich_operatoru==false){
+				push_true();
+				gen_stack_pop("GF","result");
+			}
+			gen_if_start();
+			return NO_ERROR;
+
 		break;
 		case ELSE:
+			gen_else();
 			if (deep_in_program!=last_if_counter && last_KW==ELSE){
 				return ERROR_2;
 			}
@@ -153,47 +166,73 @@ int rule_KW(){
 				return ERROR_2;
 			}
 			last_KW=ELSE;
+
+			return NO_ERROR;
 		break;
 		case WHILE:
+			if (gen_to_main != 2)
+			{
+				remember_gen_place=gen_to_main;	
+			}
+			gen_to_main=2;//generovani do specialniho stringu
+			gen_while_start();
+
 			deep_in_program++;
 			last_KW=WHILE;
-			set_token_and_return();
-			if (token_type!=END_OF_LINE){//pokud se to rovná end_of_line tak podmínka je nil ??
+			if (set_token_and_return()!=END_OF_LINE){//pokud se to rovná end_of_line tak podmínka je nil ??
 				result=rule_expresion_pusher();
 				if (is_err(result)!=NO_ERROR){
 					return result;
 				}
+			}else{
+				return ERROR_2;
 			}
+			gen_while_condition();
 			if (token_type!=END_OF_LINE){
 				return ERROR_2;
 			}
-			program();//musí se zakázat definice funkce
+			return NO_ERROR;
 			
 		break;
 		case END:
+			last_KW=END;
+			printf("last_if_counter : %d\n",last_if_counter);
+			printf("deep_in_program : %d\n", deep_in_program);
+			//printf("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiifffffffffffffffffffffffffffffffffffj\n");
 			if (deep_in_program==0){
 				//tady musíme dělat něco ? :D 
-				printf("zakončil jsem deklaraci funkce\n");
+				//printf("zakončil jsem deklaraci funkce\n");
 				if(uvnitr_funkce==1){
-					return check_end();
+					result=check_end();
+					if (is_err(result)!=NO_ERROR){
+						return result;
+					}
 				}
 				else{
 					return ERROR_2;
 				}
 			}
 			else{
-				deep_in_program--;
-				last_KW=END;
-				if (last_KW==WHILE){
-					printf("zakončíme while \n");
-					return check_end();
-
-				}
-				else if(last_KW==ELSE || last_KW==IF){
-					printf("zakončíme if \n");
+				
+				if(last_if_counter==deep_in_program && if_counter>=1){
 					last_if_counter--;
-					return check_end();
+					deep_in_program--;
+					result=check_end();
+					if (is_err(result)!=NO_ERROR){
+						return result;
+					}
+					gen_if_end();
+					return NO_ERROR;
 				}
+				else {
+					deep_in_program--;
+					if (while_counter==1){
+						gen_to_main=remember_gen_place;
+					}
+					gen_while_end();
+				}
+				
+				return NO_ERROR;	
 			}
 		default:
 			return rule_preset_fuctions();
@@ -414,7 +453,7 @@ int rule_print(){
 }
 
 int check_end(){
-	if(set_token_and_return()==END_OF_LINE){
+	if(set_token_and_return()==END_OF_LINE || token_type==END_OF_FILE){
 		return NO_ERROR;					
 	}
 	else{
@@ -422,12 +461,11 @@ int check_end(){
 	}
 }
 int rule_expresion_pusher(){
+	typ_promene=WITHOUT_TYPE;
 	tStack tmp_s;
 	SInit(&tmp_s);
 	int result=NO_ERROR;
-	printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
-	printf("token TYPE na ZACATKU :::::::: %d \n",token_type );
-
+	remember_token_type=token_type;
 	int p_tok1;
 	int2float=false;
 	int top_stack = I_DOLLAR;
@@ -447,22 +485,22 @@ int rule_expresion_pusher(){
 /**/		}
 /**/		else if (token_type==TYPE_IDENTIFIER){
 
-/**/			int IDecko=zjisti_co_je_id();
+/**/			int IDecko=check_id();
 /**/			if (is_err(set_type_promene(IDecko))!=NO_ERROR){
 /**/				return set_type_promene(IDecko);
 /**/			}
-/**/			skipni_get_token=true;
+/**/			
 /**/
 /*frida*/	}
-	printf("%d\n",p_tok1 );
-	printf("%d\n",top_stack );
+	//printf("%d\n",p_tok1 );
+	//printf("%d\n",top_stack );
 	while(!(top_stack == I_DOLLAR && p_tok1 == I_DOLLAR)){
-		printf("CYKLUS, TOKEN: %d\n", token_type);
-		//printf("%d %d\n",STop(&stack), p_tok1 );
+		//printf("CYKLUS, TOKEN: %d\n", token_type);
+		////printf("%d %d\n",STop(&stack), p_tok1 );
 
 		//Pokud je na vrcholu nonterm, nepracuje se s nontermem ale symbolem pred nim (viz prednaska 8)
 		if(STop(&stack)==NONTERM){
-			printf("Na vrcholu zásobníku je NONTERM\n");
+			//printf("Na vrcholu zásobníku je NONTERM\n");
 			is_last_NONTERM = true;
 			SPop(&stack);
 			top_stack = STop(&stack);
@@ -473,20 +511,20 @@ int rule_expresion_pusher(){
 		}
 
 		if((top_stack == I_DOLLAR) && (p_tok1 == I_DOLLAR)){
-
-			printf("KONEC VÝRAZU!\n");
-			/*gen_stack_pop("GF","result");
-			create_frame();
+			if (generator_popl_token){
+				gen_stack_pop("GF","result");
+			}
+			/*create_frame();
 			gen_call("print");*/
 			//gen_clear(); cisteni zasobníku
 			break;
 		}
 // 
 		if(prior[top_stack][p_tok1]==N){
-			printf("ERROR: nedefinovaná operace v tabulce priorit!!!%d %d\n",top_stack, p_tok1);
+			//printf("ERROR: nedefinovaná operace v tabulce priorit!!!%d %d\n",top_stack, p_tok1);
 			return ERROR_IDK; //NEVIIIIIIIIIIIIIIIIIIIIIM JAKÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝ ERROR
 		}else if(prior[top_stack][p_tok1]==S){//Shiftuji
-			printf("BUDU shiftovat\n");
+			//printf("BUDU shiftovat\n");
 			if(STop(&stack) != top_stack){//Na vrcholu zasobiku je NONTERM
 				SPop(&stack);
 				SPush(&stack, S);
@@ -497,7 +535,7 @@ int rule_expresion_pusher(){
 			}		
 			if(p_tok1 == I_DATA){
 				if(token_type >= TYPE_IDENTIFIER && token_type <= TYPE_STRING){
-					printf("asdasaaaaa\n");
+					//printf("asdasaaaaa\n");
 					TPush(&values, *token);
 				}
 			/*	else if(token_type == TYPE_FLOAT){
@@ -532,16 +570,30 @@ int rule_expresion_pusher(){
 			print_stack(&stack);
 			if(remember_token_type == I_DOLLAR){
 				remember_token_type = END_OF_FILE;
-				printf("ANO\n");
+				//printf("ANO\n");
 				return ERROR_IDK;
 				break;
 			}else if (set_token_and_return() == END_OF_FILE || token_type == THEN ||
 /*frida*/		 token_type == DO || token_type== END_OF_LINE || token_type == COMMA){
 
 				remember_token_type = I_DOLLAR;
-				printf("I_DOLLAR na konci\n");
+				//printf("I_DOLLAR na konci\n");
 			}
 			p_tok1 = get_prec_table_index(token_type);
+			if (remember_token_type == LEFT_BRACKET && token_type==RIGHT_BRACKET )
+			{
+				token_type=NIL;
+
+				push_false();
+				gen_stack_pop("GF","result");
+				znic_zasobniky();
+				if ( typ_promene != WITHOUT_TYPE && typ_promene!=NIL){
+					return ERROR_4;
+				}
+				set_token_and_return();
+
+				return NO_ERROR;
+			}
 			remember_token_type=token_type;
 /*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
 /**/			if (is_err(set_type_promene(token_type))!=NO_ERROR){
@@ -549,40 +601,54 @@ int rule_expresion_pusher(){
 /**/			}
 /**/		}
 /**/		else if (token_type==TYPE_IDENTIFIER){
-/**/			int IDecko=zjisti_co_je_id();
+/**/			int IDecko=check_id();
 /**/			if (is_err(set_type_promene(IDecko))!=NO_ERROR){
 /**/				return set_type_promene(IDecko);
 /**/			}
-/**/			skipni_get_token=true;
+/**/		
 /**/
 /*frida*/	}
 
 		}else if(prior[top_stack][p_tok1]==R){//Redukuji
-			printf("BUDU REDUKOVAT: %d %d\n", top_stack,p_tok1);
+			//printf("BUDU REDUKOVAT: %d %d\n", top_stack,p_tok1);
 			if(top_of_stack_prepared_for_reduction(&stack)){
-				printf("redukuji :D stack:%d expr:%d\n",top_stack,p_tok1);
+				//printf("redukuji :D stack:%d expr:%d\n",top_stack,p_tok1);
 			}else{
-				printf("FATAL ERROR WHEN REDUCING\n");
+				//printf("FATAL ERROR WHEN REDUCING\n");
 				return ERROR_IDK;
 			}
 			
 		}else if(prior[top_stack][p_tok1]==E){
-			printf("Equal :D\n");
+			//printf("Equal :D\n");
 
 			SPush(&stack, p_tok1);
 
 			if(remember_token_type == I_DOLLAR){
 				remember_token_type = END_OF_FILE;
-				printf("ANO\n");
+				//printf("ANO\n");
 				return ERROR_IDK;
 				break;
 			}else if (set_token_and_return() == END_OF_FILE || token_type == THEN ||
 /*frida*/		 token_type == DO || token_type== END_OF_LINE || token_type == COMMA){
 
 				remember_token_type = I_DOLLAR;
-				printf("I_DOLLAR na konci\n");
+				//printf("I_DOLLAR na konci\n");
 			}
 			p_tok1 = get_prec_table_index(token_type);
+			if (remember_token_type == LEFT_BRACKET && token_type==RIGHT_BRACKET )
+			{
+				token_type=NIL;
+
+				push_false();
+				gen_stack_pop("GF","result");
+				znic_zasobniky();
+				if ( typ_promene != WITHOUT_TYPE && typ_promene!=NIL){
+					return ERROR_4;
+				}
+				set_token_and_return();
+
+				return NO_ERROR;
+			}
 			remember_token_type=token_type;
 /*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
 /**/			if (is_err(set_type_promene(token_type))!=NO_ERROR){
@@ -590,32 +656,33 @@ int rule_expresion_pusher(){
 /**/			}
 /**/		}
 /**/		else if (token_type==TYPE_IDENTIFIER){
-/**/			int IDecko=zjisti_co_je_id();
+/**/			int IDecko=check_id();
 /**/			if (is_err(set_type_promene(IDecko))!=NO_ERROR){
 /**/				return set_type_promene(IDecko);
 /**/			}
-/**/			skipni_get_token=true;
+/**/	
 /**/
 /*frida*/	}
 
 			if(top_of_stack_prepared_for_reduction(&stack)){
-				printf("equal :D stack:%d expr:%d\n",top_stack,p_tok1);
+				//printf("equal :D stack:%d expr:%d\n",top_stack,p_tok1);
 			}else{
-				printf("FATAL ERROR WHEN EQUAL\n");
+				//printf("FATAL ERROR WHEN EQUAL\n");
 				return ERROR_IDK;
 			}
 		}
 
 
 	//print_stack(&stack);
-		printf("%d %d\n",top_stack,p_tok1 );
-		printf("------------------------------------------------------\n");
+		//printf("%d %d\n",top_stack,p_tok1 );
+		//printf("------------------------------------------------------\n");
 	}
 	if (!generator_popl_token){
 		gen_stack_push(TPop(&values));
+		gen_stack_pop("GF","result");
 
 	}
-	printf("KONEC řádku, tisknu vysledny zasobnik:\n");
+	//printf("KONEC řádku, tisknu vysledny zasobnik:\n");
 	print_stack(&stack);
 	porovnavani_counter=0;
 	return NO_ERROR;
@@ -638,12 +705,34 @@ int set_type_promene(int typu){
 	else if(typu==WITHOUT_TYPE){
 		return NO_ERROR;
 	}
+	else if (typu==NIL && (typ_promene == NIL || typ_promene==WITHOUT_TYPE)){
+		typ_promene=NIL;
+	}
 	else{
-
 		return ERROR_4; // jde o kombinovaní prace se stringy a čísly
 	}
 	return NO_ERROR;
 }
+
+int check_id(){
+	tKey k = ((char*)token->attribute.string->word);
+	nazev_posledni_ID=k;
+	if(htRead(h_tabulka,k) == NULL){
+		return ERROR_3;
+	}
+	else{
+		tData *data = malloc(sizeof(tData));
+		data=htRead(h_tabulka,k);
+		if(!data->funkce){
+			int data_type = data->type;
+			return data_type;
+		}else{
+			free(data);
+			return ERROR_4;
+		}
+	}
+}
+
 int zjisti_co_je_id(){
 	int result = NO_ERROR;
 			tKey k = ((char*)token->attribute.string->word);
@@ -652,15 +741,29 @@ int zjisti_co_je_id(){
 			if(htRead(h_tabulka,k) == NULL){//Pokud nebyla nalezena polozka, tak ji vloz
 				if(set_token_and_return() == EQUALS){ 	
 					//zde se bude jednat o definici nove promene, musí se nainicializovat na nil, potom se do ní musí přidat hodnota která je za "="
+					pouziti_relacnich_operatoru=true;
 					tData *data = malloc(sizeof(tData));
 					data->type=NIL;
 					htInsert(h_tabulka, k, data );
-					gen_var(k);			
+					if (gen_to_main==2){
+						int i = gen_to_main;
+						gen_to_main=remember_gen_place;
+						remember_gen_place=i;
+					}
+					gen_var(k);	
+					if (remember_gen_place==2){
+						int i = remember_gen_place;
+						remember_gen_place=gen_to_main;
+						gen_to_main=i;
+					}		
 					result=rule_definice_promene();
 					if(is_err(result)!=NO_ERROR){
 						return result;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
 					}
-					gen_stack_pop("LF",k);
+
+					if (typ_promene!=NIL){
+						result_to_var(k);
+					}
 					last_id_func=false;
 					data->funkce=false;
 					data->type=typ_promene;
@@ -710,7 +813,7 @@ int zjisti_co_je_id(){
 				data2=htRead(h_tabulka,k);
 				tmp=token;
 				/*if(set_token_and_return() == EQUALS){
-					//printf("redefinice promene token_type %d\n",token_type);
+					////printf("redefinice promene token_type %d\n",token_type);
 					//nové přiřazování do proměné, hádám když můžem přetypovávat i znova a znova redefinovat proměnou tak se nic nestane když jenom 					
 					result=rule_definice_promene();
 					if(is_err(result)!=NO_ERROR){
@@ -741,6 +844,7 @@ int zjisti_co_je_id(){
 						}
 					}	
 					if(pocitac_param_u_call!=0){
+						//printf("AAAAAAAAAAAAAAAAa\n");
 						return ERROR_5;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
 						
 					}	
@@ -760,7 +864,7 @@ int zjisti_co_je_id(){
 					return NO_ERROR;
 				}
 				else{
-					printf("QQQQQQQQQQQQQQQQQAAAAAAAAAAAAAAAAaQQQQQQQQQQQQQQQQQQQQQQQQQQQqq\n");
+					//printf("QQQQQQQQQQQQQQQQQAAAAAAAAAAAAAAAAaQQQQQQQQQQQQQQQQQQQQQQQQQQQqq\n");
 
 					//jenom pouziti promene, kontrolovat něco je asi zbytečné
 					last_id_func=false;
@@ -770,6 +874,7 @@ int zjisti_co_je_id(){
 					TPush(&values, *token);
 
 					if (set_token_and_return()==EQUALS){
+						pouziti_relacnich_operatoru=true;
 						SPop(&stack);
 						SPop(&stack);
 						TPop(&values);
@@ -778,7 +883,7 @@ int zjisti_co_je_id(){
 							return result;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
 						
 						}
-						gen_stack_pop("LF",k);
+						result_to_var(k);
 						//generovat movnoti do promene vysledek posledního result
 						data2->type=typ_promene;
 						htInsert(h_tabulka, k, data2 );
@@ -787,15 +892,11 @@ int zjisti_co_je_id(){
 					else if((token_type>=PLUS && token_type <= MUL) || (token_type >= COMPARE&& token_type <= NOTEQUAL)){	
 						//generator hod na stack x
 						rule_expresion_pusher();
-						gen_stack_pop("GF","result");
-						create_frame();
-						gen_call("print");
+
 						return NO_ERROR;
 					}
 					else if (token_type==END_OF_LINE || token_type==END_OF_FILE){
-						gen_stack_pop("GF","result");
-						create_frame();
-						gen_call("print");
+
 						return NO_ERROR;
 					}
 					else {
@@ -902,6 +1003,7 @@ int rule_definice_promene(){
 				return ERROR_2;
 			}
 			else if(data2->type==NIL){
+				typ_promene=NIL;
 				if(set_token_and_return()!=END_OF_LINE && token_type!=END_OF_FILE){
 					return ERROR_2; // možná 4 ?? IDK
 				}
@@ -973,7 +1075,7 @@ int rule_def(){
 
 					return result;
 				}else{	
-					printf("tato funkce už existuje nemůžete ji redefinovat\n");				
+					//printf("tato funkce už existuje nemůžete ji redefinovat\n");				
 					return ERROR_2;
 				}
 			}
@@ -1032,9 +1134,9 @@ int rule_def(){
 					result = ERROR_2;
 					return result;
 				}
-				printf("tady se zavola generator na generovani hlavičky funkce def nazev_funkce (param1, param2,....,paramN) \n");
+				//printf("tady se zavola generator na generovani hlavičky funkce def nazev_funkce (param1, param2,....,paramN) \n");
 				result=program();
-				printf("Uspěšné ukončení funkce, generuj end funkce\n");
+				//printf("Uspěšné ukončení funkce, generuj end funkce\n");
 				return result;
 				
 
@@ -1188,7 +1290,7 @@ int set_token_and_return(){
 	}else{
 		get_token(token);
 		token_type = token->type;
-		//printf("%d\n",token_type );
+		////printf("%d\n",token_type );
 		return token_type;
 	}
 
@@ -1196,23 +1298,23 @@ int set_token_and_return(){
 
 int pop_token(){
 	token_type = SPop(&stack);
-	//printf("POP_TOKEN: %d\n",token_type);
+	////printf("POP_TOKEN: %d\n",token_type);
 	return token_type;
 }
 bool top_of_stack_prepared_for_reduction(tStack *stack){
 
-	printf("JSEM VE FUNKCI top_of_stack_prepared_for_reduction\n");
+	//printf("JSEM VE FUNKCI top_of_stack_prepared_for_reduction\n");
 	int i;
 	for(i = 0; ;i++){
 		if(stack->a[(stack->top)-i] == S){
-			printf("%d:%d\n",i, stack->a[(stack->top)-i]);
+			//printf("%d:%d\n",i, stack->a[(stack->top)-i]);
 
 			print_stack(stack);
 			break;
 		}
 	}
 
-	printf("I JE::::::::::::::::%d\n", i);
+	//printf("I JE::::::::::::::::%d\n", i);
 	//switch(get_rule_from_stack(i)){
 	switch(i){
 		// E->i
@@ -1221,7 +1323,7 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 			SPop(stack);
 			SPop(stack);
 			SPush(stack, NONTERM);
-			printf("ZAS:\n");
+			//printf("ZAS:\n");
 			print_stack(stack);
 			return true;
 
@@ -1239,12 +1341,12 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 						if (typ_promene==TYPE_STRING){
 							SPop (&operatory);
 							SPop (&operatory);	
-							printf("GENERUJI KONKATENACI\n");
+							//printf("GENERUJI KONKATENACI\n");
 							gen_stack_concatanate();
 						}else{
 							SPop (&operatory);
 							SPop (&operatory);	
-							printf("GENERUJI SOUCET\n");
+							//printf("GENERUJI SOUCET\n");
 							gen_stack_add();
 						}
 
@@ -1256,13 +1358,13 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 						}
 						SPop (&operatory);
 						SPop (&operatory);	
-						printf("GENERUJI ODECET\n");					
+						//printf("GENERUJI ODECET\n");					
 						gen_stack_sub();
 						//gen_stack_pop("GF","result");
 					}
 
 					do_E_rule(stack);
-					printf("Zasobnik po provedení pravidla E->E+E\n");
+					//printf("Zasobnik po provedení pravidla E->E+E\n");
 					return true;
 				}else if(stack->a[(stack->top)-1] == I_MUL_DIV){ // E -> E * E a E -> E / E					
 					check_data_type();
@@ -1277,20 +1379,20 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 
 						SPop (&operatory);
 						SPop (&operatory);	
-						printf("GENERUJI NASOBENI\n");				
+						//printf("GENERUJI NASOBENI\n");				
 						gen_stack_mul();
 						//gen_stack_pop("GF","result");
 					}
 					else if((&operatory)->a[((&operatory)->top)-1] == DIV){	
 						SPop (&operatory);
 						SPop (&operatory);	
-						printf("GENERUJI DELENI\n");						
+						//printf("GENERUJI DELENI\n");						
 						gen_stack_idiv();
 						//gen_stack_pop("GF","result");
 					}
 
 					do_E_rule(stack);
-					printf("Zasobnik po provedení pravidla E->E+E\n");
+					//printf("Zasobnik po provedení pravidla E->E+E\n");
 					return true;
 				}else if(stack->a[(stack->top)-1] == I_REL_OP){ // E -> E relacni-operator E 
 					if (skipovani==2){
@@ -1306,7 +1408,7 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 
 						SPop (&operatory);
 						SPop (&operatory);	
-						printf("GENERUJI NASOBENI\n");				
+						//printf("GENERUJI NASOBENI\n");				
 						gen_stack_eq();
 						//gen_stack_pop("GF","result");
 					}
@@ -1314,7 +1416,7 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 
 						SPop (&operatory);
 						SPop (&operatory);	
-						printf("GENERUJI NASOBENI\n");				
+						//printf("GENERUJI NASOBENI\n");				
 						gen_less_or_equal();
 						//gen_stack_pop("GF","result");
 					}
@@ -1322,7 +1424,7 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 
 						SPop (&operatory);
 						SPop (&operatory);	
-						printf("GENERUJI NASOBENI\n");				
+						//printf("GENERUJI NASOBENI\n");				
 						gen_stack_less_than();
 						//gen_stack_pop("GF","result");
 					}
@@ -1330,7 +1432,7 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 
 						SPop (&operatory);
 						SPop (&operatory);	
-						printf("GENERUJI NASOBENI\n");				
+						//printf("GENERUJI NASOBENI\n");				
 						gen_more_or_equal();
 						//gen_stack_pop("GF","result");
 					}
@@ -1338,7 +1440,7 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 
 						SPop (&operatory);
 						SPop (&operatory);	
-						printf("GENERUJI NASOBENI\n");				
+						//printf("GENERUJI NASOBENI\n");				
 						gen_stack_more_than();
 						//gen_stack_pop("GF","result");
 					}
@@ -1346,12 +1448,12 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 
 						SPop (&operatory);
 						SPop (&operatory);	
-						printf("GENERUJI NASOBENI\n");				
+						//printf("GENERUJI NASOBENI\n");				
 						gen_not_equal();
 						//gen_stack_pop("GF","result");
 					}
 					do_E_rule(stack);
-					printf("Zasobnik po provedení pravidla E->E+E\n");
+					//printf("Zasobnik po provedení pravidla E->E+E\n");
 					return true;
 				}
 			//E->(E)
@@ -1359,19 +1461,19 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 				do_E_rule(stack);
 				print_stack(stack);
 			}else{
-				printf("Chyba při kontrole vrcholu zásobníku\n");
+				//printf("Chyba při kontrole vrcholu zásobníku\n");
 				return false;
 			}
 			
 		break;
 		default:
-			printf("Něco se podělalo\n");
+			//printf("Něco se podělalo\n");
 			return false;
 
 		break;
 	}
 
-	printf("KONČÍM FUNKCI top_of_stack_prepared_for_reduction\n");
+	//printf("KONČÍM FUNKCI top_of_stack_prepared_for_reduction\n");
 	return true;
 }
 void check_data_type(){
@@ -1450,16 +1552,16 @@ void do_E_rule(tStack *stack){
 
 void print_stack(tStack *stack){
 
-	printf("TISKNU OBSAH ZÁSOBNÍKU:\n");
+	//printf("TISKNU OBSAH ZÁSOBNÍKU:\n");
 	for(int i = 0;i< (stack)->top+1;i++){
-		printf("%d ", (stack)->a[i]);
+		//printf("%d ", (stack)->a[i]);
 	}
-	printf("\nKONEC ZÁSOBNÍKU\n");
+	//printf("\nKONEC ZÁSOBNÍKU\n");
 }
 void print_token_stack(Token_Stack *st){
-	printf("TISKNU OBSAH ZÁSOBNÍKU TOKENůůů:\n");
+	//printf("TISKNU OBSAH ZÁSOBNÍKU TOKENůůů:\n");
 	for(int i = 0;i< (st)->top+1;i++){
-		printf("%d ", (st)->a[i].type);
+		//printf("%d ", (st)->a[i].type);
 	}
-	printf("\nKONEC ZÁSOBNÍKU\n");
+	//printf("\nKONEC ZÁSOBNÍKU\n");
 }

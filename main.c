@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	*/
 
 	printf("ZACATEK parseru\n");
-	program();
+	printf("%d\n",program());
 	printf("KONEC parseru\n");
 	free_all();
 	fclose(source_file);

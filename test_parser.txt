@@ -1,4 +1,9 @@
+x=2
+if x==2 then
+	while x<=3
+	 x=x+1
+	end
+else
 
-x="AHOJ"+"KUBA"
+end
 
-x
