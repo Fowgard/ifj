@@ -131,16 +131,60 @@ LABEL $$main
 CREATEFRAME
 PUSHFRAME
 
+<<<<<<< HEAD
+DEFVAR LF@!x
+MOVE LF@!x nil@nil
 PUSHS int@2
-PUSHS int@2
-MULS
-PUSHS int@55
-SUBS
 POPS GF@!result
-CREATEFRAME
-CALL $print
-CLEARS
+MOVE LF@!x GF@!result
+PUSHS int@2
+PUSHS LF@!x
+POPS GF@!tmp1
+POPS GF@!tmp2
+PUSHS GF@!tmp1
+PUSHS GF@!tmp2
+EQS
+POPS GF@!result
+ # if
+JUMPIFEQ $else1!0 GF@!result bool@false
+ # while
+LABEL $while1!0
+PUSHS int@3
+PUSHS LF@!x
+POPS GF@!tmp1
+POPS GF@!tmp2
+PUSHS GF@!tmp1
+PUSHS GF@!tmp2
+POPS GF@!tmp1
+POPS GF@!tmp2
+PUSHS GF@!tmp2
+PUSHS GF@!tmp1
+LTS
+PUSHS GF@!tmp2
+PUSHS GF@!tmp1
+EQS
+ORS
+POPS GF@!result
+JUMPIFEQ $while_end1!0 GF@!result bool@false
+PUSHS int@1
+PUSHS LF@!x
+POPS GF@!tmp1
+POPS GF@!tmp2
+PUSHS GF@!tmp1
+PUSHS GF@!tmp2
+ADDS
+POPS GF@!result
+MOVE LF@!x GF@!result
+JUMP $while1!0
+LABEL $while_end1!0
+ # else
+JUMP $if_end1!0
+LABEL $else1!0
+LABEL $if_end1!0
+write lf@!x
+=======
 
+>>>>>>> dokumentace
 POPFRAME
 CLEARS
 EXIT int@0
