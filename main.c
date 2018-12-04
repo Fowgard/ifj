@@ -13,7 +13,7 @@
 
 
 extern FILE* source_file;
-
+//extern int file_begin;
 
 
 
@@ -33,6 +33,7 @@ int main(int argc, char *argv[])
 		exit(99);
 	}
 	
+//	file_begin =1;
 	
 	//zatim v komentu, predchystane na finalni verzi, volani parse
 	/*

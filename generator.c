@@ -439,6 +439,8 @@ void gen_parametr(char *p_name, int order)
 	CAT_INST("");
 }
 
+
+
 void gen_stack_push(token_t token)
 {
 	CAT_STR("PUSHS ");
@@ -522,6 +524,8 @@ void gen_not_equal(){
 	CAT_INST("EQS");
 	CAT_INST("NOTS");
 }
+
+
 
 void gen_stack_more_than()
 {

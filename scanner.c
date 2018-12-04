@@ -9,7 +9,7 @@ extern lexem_t *code_rest;
 
 
 FILE *source_file;
-
+int file_begin = 1;
 
 void print_file()
 {
@@ -57,11 +57,18 @@ void get_token(token_t *token)
 	while(TRUE)
 	{
 		symbol = fgetc(source_file);//nacteni jednoho symbolu(pismene)
-
 		//blokovy komentar
-		if (symbol == '\n')
+		if (symbol == '\n' || file_begin)
 		{
-			char tmp_symbol = fgetc(source_file); //pokud byl novi radek tak otestujem zda neni dalsi znak blokovy komentar =begin
+			char tmp_symbol;
+			if(file_begin)
+			{
+				tmp_symbol = symbol;
+				symbol = ' ';
+			}
+			else 
+				tmp_symbol = fgetc(source_file); //pokud byl novi radek tak otestujem zda neni dalsi znak blokovy komentar =begin
+			file_begin = 0;
 			if (tmp_symbol == '=')
 			{
 				int comment = 1;
@@ -147,7 +154,6 @@ void get_token(token_t *token)
 			else
 				ungetc(tmp_symbol, source_file); //pokud znak na novem radku neby "=" tak ho vrat
 		}
-
 		switch(state)
 		{
 			case STATE_START:	

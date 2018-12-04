@@ -40,14 +40,24 @@ int program(){
 		gen_to_main = 1;
 	}
 	int res; // vyhodnocovaní chyb pro parser
-	set_token_and_return();
+	
+	if (set_token_and_return()!=END){
+		while(!SEmpty(&stack)){
+			SPop(&stack);
+		}
+		while(!SEmpty(&operatory)){
+			SPop(&operatory);
+		}
+		while(!TEmpty(&values)){
+			TPop(&values);
+		}
+	}
 	switch(token_type){	
 		case LEFT_BRACKET:
 			brackets_counter++;
 		case TYPE_INT:
 		case TYPE_FLOAT:
 		case TYPE_STRING:
-		case TYPE_IDENTIFIER:	
 			res = rule_expresion_pusher();
 			if(is_err(res) != NO_ERROR){
 				call_generator(res);
@@ -81,6 +91,13 @@ int program(){
 		case END_OF_LINE:
 			res = program();
 			return res;
+		break;
+		case TYPE_IDENTIFIER:
+			res=zjisti_co_je_id();	
+			if(is_err(res) != NO_ERROR){
+				call_generator(res);
+				return res;
+			}
 		break;
 		default: 			
 			res = rule_KW();
@@ -415,7 +432,11 @@ int rule_expresion_pusher(){
 	int2float=false;
 	int top_stack = I_DOLLAR;
 	pouziti_relacnich_operatoru = false;
-	SPush(&stack, top_stack);
+	print_stack(&stack);
+	if (SEmpty(&stack)){
+		print_stack(&stack);
+		SPush(&stack, top_stack);	
+	}
 	generator_popl_token=false;
 	bool is_last_NONTERM = false;
 	p_tok1 = get_prec_table_index(token_type);
@@ -454,9 +475,9 @@ int rule_expresion_pusher(){
 		if((top_stack == I_DOLLAR) && (p_tok1 == I_DOLLAR)){
 
 			printf("KONEC VÝRAZU!\n");
-			gen_stack_pop("GF","result");
+			/*gen_stack_pop("GF","result");
 			create_frame();
-			gen_call("print");
+			gen_call("print");*/
 			//gen_clear(); cisteni zasobníku
 			break;
 		}
@@ -509,7 +530,6 @@ int rule_expresion_pusher(){
 	
 			SPush(&stack, p_tok1);
 			print_stack(&stack);
-
 			if(remember_token_type == I_DOLLAR){
 				remember_token_type = END_OF_FILE;
 				printf("ANO\n");
@@ -640,15 +660,15 @@ int zjisti_co_je_id(){
 					if(is_err(result)!=NO_ERROR){
 						return result;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
 					}
+					gen_stack_pop("LF",k);
 					last_id_func=false;
 					data->funkce=false;
 					data->type=typ_promene;
 					htInsert(h_tabulka, k, data );
-					return typ_promene;
+					return NO_ERROR;
 				}
 				else{				
 					//zavolani jeste nedeklarovane funkce QQ
-					printf("QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQqq\n");
 					int temp1 = pocitac_param_u_call;
 					int temp2 = brackets_counter;
 					bool temp3 = uzavorkovana_funkce;
@@ -679,19 +699,17 @@ int zjisti_co_je_id(){
 					}
 					volani_func--;
 					data->definovano=false;
-					data->type=typ_promene;
+					typ_promene=NIL;
 					last_id_func=true;	
 					data->funkce=true;
 					htInsert(h_tabulka, k, data );
-					printf("AAAAAAAAAAAAAAAAAAAAAAAa %d \n",typ_promene);
-
-					return typ_promene;
+					return NO_ERROR;
 				}
 			}else{
 				tData *data2 = malloc(sizeof(tData));
 				data2=htRead(h_tabulka,k);
 				tmp=token;
-				if(set_token_and_return() == EQUALS){
+				/*if(set_token_and_return() == EQUALS){
 					//printf("redefinice promene token_type %d\n",token_type);
 					//nové přiřazování do proměné, hádám když můžem přetypovávat i znova a znova redefinovat proměnou tak se nic nestane když jenom 					
 					result=rule_definice_promene();
@@ -703,8 +721,8 @@ int zjisti_co_je_id(){
 					data->funkce=false;
 					data->type=typ_promene;	
 					htInsert(h_tabulka, k, data );
-					return typ_promene;
-				}else if(data2->funkce){
+					return typ_promene;*/
+				if(data2->funkce){
 					int temp1 = pocitac_param_u_call;
 					int temp2 = brackets_counter;
 					bool temp3 = uzavorkovana_funkce;
@@ -739,12 +757,50 @@ int zjisti_co_je_id(){
 						uzavorkovana_funkce = temp3;
 					}
 					volani_func--;
-					return data2->type;
+					return NO_ERROR;
 				}
 				else{
+					printf("QQQQQQQQQQQQQQQQQAAAAAAAAAAAAAAAAaQQQQQQQQQQQQQQQQQQQQQQQQQQQqq\n");
+
 					//jenom pouziti promene, kontrolovat něco je asi zbytečné
 					last_id_func=false;
-					return data2->type;
+					typ_promene=data2->type;
+					SPush(&stack,I_DOLLAR);
+					SPush(&stack,NONTERM);
+					TPush(&values, *token);
+
+					if (set_token_and_return()==EQUALS){
+						SPop(&stack);
+						SPop(&stack);
+						TPop(&values);
+						result=rule_definice_promene();
+						if(is_err(result)!=NO_ERROR){
+							return result;//musí se volat error je blbost abychom vraceli error, když chceme vlastně jenom typ
+						
+						}
+						gen_stack_pop("LF",k);
+						//generovat movnoti do promene vysledek posledního result
+						data2->type=typ_promene;
+						htInsert(h_tabulka, k, data2 );
+						return NO_ERROR;
+					}
+					else if((token_type>=PLUS && token_type <= MUL) || (token_type >= COMPARE&& token_type <= NOTEQUAL)){	
+						//generator hod na stack x
+						rule_expresion_pusher();
+						gen_stack_pop("GF","result");
+						create_frame();
+						gen_call("print");
+						return NO_ERROR;
+					}
+					else if (token_type==END_OF_LINE || token_type==END_OF_FILE){
+						gen_stack_pop("GF","result");
+						create_frame();
+						gen_call("print");
+						return NO_ERROR;
+					}
+					else {
+						return ERROR_2;
+					}
 				}
 			}
 return -1;
@@ -834,33 +890,18 @@ int rule_param_counter(){
 
 int rule_definice_promene(){
 	int result=NO_ERROR;
-	int typa;
 	typ_promene=WITHOUT_TYPE;//není to zatím zadny typ
 	set_token_and_return(); 
 	switch(token_type){
 		case TYPE_IDENTIFIER:
-			typa = zjisti_co_je_id();
-			if(typa==TYPE_STRING){
-				typ_promene=TYPE_STRING;
-				printf("musíme přidat do proměné ten string co je za tím \n");
-				if(set_token_and_return()==END_OF_LINE || token_type==END_OF_FILE){
-					return NO_ERROR;
-				}
-				else if (token_type == PLUS){
-					if (set_token_and_return()==TYPE_STRING){
-						result=rule_definice_promene();
-						return result;
-					}
-					else{
-						return ERROR_2;
-					}
-				}
-				else{
-					return ERROR_2;
-				}
-				// co tady může všechno nasledovat vlastně ?? sčítaní stringu a nebo EOL ? 
+		{
+			tKey k = ((char*)token->attribute.string->word);
+			tData *data2 = malloc(sizeof(tData));
+			data2=htRead(h_tabulka,k);
+			if (data2==NULL){
+				return ERROR_2;
 			}
-			else if(typa==NIL){
+			else if(data2->type==NIL){
 				if(set_token_and_return()!=END_OF_LINE && token_type!=END_OF_FILE){
 					return ERROR_2; // možná 4 ?? IDK
 				}
@@ -874,9 +915,12 @@ int rule_definice_promene(){
 			}
 
 		break;
+		}
 		case TYPE_INT:
 		case TYPE_FLOAT:
 		case TYPE_STRING:
+		print_stack(&stack);
+		print_stack(&operatory);
 			result=rule_expresion_pusher();
 			return result;
 		break;
@@ -1192,13 +1236,24 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 					}
 					posledni_pop_index=((&values)->top);
 					if((&operatory)->a[((&operatory)->top)-1] == PLUS){
-						SPop (&operatory);
-						SPop (&operatory);	
-						printf("GENERUJI SOUCET\n");
-						gen_stack_add();
+						if (typ_promene==TYPE_STRING){
+							SPop (&operatory);
+							SPop (&operatory);	
+							printf("GENERUJI KONKATENACI\n");
+							gen_stack_concatanate();
+						}else{
+							SPop (&operatory);
+							SPop (&operatory);	
+							printf("GENERUJI SOUCET\n");
+							gen_stack_add();
+						}
+
 						//gen_stack_pop("GF","result");
 					}
 					else if((&operatory)->a[((&operatory)->top)-1] == MINUS){
+						if (typ_promene==TYPE_STRING){
+							return ERROR_4;
+						}
 						SPop (&operatory);
 						SPop (&operatory);	
 						printf("GENERUJI ODECET\n");					
@@ -1211,6 +1266,9 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 					return true;
 				}else if(stack->a[(stack->top)-1] == I_MUL_DIV){ // E -> E * E a E -> E / E					
 					check_data_type();
+					if (typ_promene==TYPE_STRING){
+						return ERROR_4;
+					}
 					if (posledni_pop_index>((&values)->top)){
 						switch_stack();
 					}

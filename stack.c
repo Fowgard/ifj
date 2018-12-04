@@ -46,6 +46,8 @@ int STop (tStack *Stack)
 {
                             /* Operace nad prázdným zásobníkem způsobí chybu. */
 	if (Stack->top==0)  {
+			
+		printf("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSss\n");
 		printf("Chyba: Došlo k podtečení zásobníku s ukazateli!\n");
 		exit(99);
 	}	

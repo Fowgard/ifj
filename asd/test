@@ -1,0 +1,151 @@
+.IFJcode18
+DEFVAR GF@!result
+DEFVAR GF@!tmp1
+DEFVAR GF@!tmp2
+DEFVAR GF@!tmp3
+JUMP $$main
+
+LABEL $print
+PUSHFRAME
+DEFVAR LF@!retvar
+WRITE GF@!result
+MOVE LF@!retvar nil@nil
+POPFRAME
+RETURN
+
+LABEL $substr
+PUSHFRAME
+DEFVAR LF@!retvar
+MOVE LF@!retvar nil@nil
+DEFVAR LF@!length
+CREATEFRAME
+DEFVAR TF@!0
+MOVE TF@!0 LF@!0
+CALL $length
+MOVE LF@!length TF@!retvar
+DEFVAR LF@!relation
+LT LF@!relation LF@!length int@0
+JUMPIFEQ $substr_end LF@!relation bool@true
+EQ LF@!relation LF@!length int@0
+JUMPIFEQ $substr_end LF@!relation bool@true
+LT LF@!relation LF@!1 int@0
+JUMPIFEQ $substr_end LF@!relation bool@true
+GT LF@!relation LF@!1 LF@!length
+JUMPIFEQ $substr_end LF@!relation bool@true
+LT LF@!relation LF@!2 int@0
+JUMPIFEQ $substr_end LF@!relation bool@true
+MOVE LF@!retvar string@
+EQ LF@!relation LF@!2 int@0
+JUMPIFEQ $substr_end LF@!relation bool@true
+DEFVAR LF@!n
+MOVE LF@!n LF@!length
+SUB LF@!n LF@!n LF@!1
+GT LF@!relation LF@!2 LF@!n
+JUMPIFEQ $n_is_max LF@!relation bool@true
+JUMP $find_substr
+LABEL $n_is_max
+MOVE LF@!2 LF@!n
+LABEL $find_substr
+DEFVAR LF@!i
+MOVE LF@!i LF@!1
+DEFVAR LF@!symbol
+DEFVAR LF@!cond
+LABEL $substr_loop
+GETCHAR LF@!symbol LF@!0 LF@!i
+CONCAT LF@!retvar LF@!retvar LF@!symbol
+ADD LF@!i LF@!i int@1
+SUB LF@!2 LF@!2 int@1
+GT LF@!cond LF@!2 int@0
+JUMPIFEQ $substr_loop LF@!cond bool@true
+LABEL $substr_end
+POPFRAME
+RETURN
+
+LABEL $chr
+PUSHFRAME
+DEFVAR LF@!retvar
+DEFVAR LF@!relation
+LT LF@!relation LF@!0 int@0
+JUMPIFEQ $chr_error LF@!relation bool@true
+GT LF@!relation LF@!0 int@255
+JUMPIFEQ $chr_error LF@!relation bool@true
+INT2CHAR LF@!retvar LF@!0
+POPFRAME
+RETURN
+LABEL $chr_error
+CLEARS
+EXIT int@49
+
+LABEL $ord
+PUSHFRAME
+DEFVAR LF@!retvar
+MOVE LF@!retvar nil@nil
+DEFVAR LF@!relation
+LT LF@!relation LF@!1 int@0
+JUMPIFEQ $ord_end LF@!relation bool@true
+DEFVAR LF@!length
+CREATEFRAME
+DEFVAR TF@!0
+MOVE TF@!0 LF@!0
+CALL $length
+MOVE LF@!length TF@!retvar
+SUB LF@!length LF@!length int@1
+GT LF@!relation LF@!1 LF@!length
+JUMPIFEQ ord_end LF@!relation bool@true
+STRI2INT LF@!retval LF@!0 LF@!1
+LABEL $ord_end
+POPFRAME
+RETURN
+
+LABEL $length
+PUSHFRAME
+DEFVAR LF@!retvar
+STRLEN LF@!retvar LF@!0
+POPFRAME
+RETURN
+
+LABEL $inputs
+PUSHFRAME
+DEFVAR LF@!retvar
+READ LF@!retvar string
+POPFRAME
+RETURN
+
+LABEL $inputi
+PUSHFRAME
+DEFVAR LF@!retvar
+READ LF@!retvar int
+POPFRAME
+RETURN
+
+LABEL $inputf
+PUSHFRAME
+DEFVAR LF@!retvar
+READ LF@!retvar float
+POPFRAME
+RETURN
+
+
+# main:
+LABEL $$main
+CREATEFRAME
+PUSHFRAME
+
+DEFVAR LF@!x
+PUSHS string@KUBA
+PUSHS string@AHOJ
+POPS GF@!tmp1
+POPS GF@!tmp2
+PUSHS GF@!tmp1
+PUSHS GF@!tmp2
+POPS GF@!tmp1
+POPS GF@!tmp2
+CONCAT GF@!tmp3 GF@!tmp2 GF@!tmp1
+PUSHS GF@!tmp3
+POPS LF@!x
+WRITE LF@!x
+
+POPFRAME
+CLEARS
+EXIT int@0
+

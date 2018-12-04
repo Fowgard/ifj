@@ -17,7 +17,7 @@ typedef char* tKey;
 /* typ obsahu (například cena zboží) */
 typedef struct tData{
 	int type; 	//typ co vrací funkce / proměná
-	lexem_t *lexem; 
+	//lexem_t *lexem; 
 	bool definovano; // jestli byla funkce definovana
 	int pocet_parametru; 
 	bool funkce; // rozhoduje jestli je funkce nebo ne ( když ne tak je proměna)
