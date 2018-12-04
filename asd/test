@@ -131,6 +131,7 @@ LABEL $$main
 CREATEFRAME
 PUSHFRAME
 
+<<<<<<< HEAD
 DEFVAR LF@!x
 MOVE LF@!x nil@nil
 PUSHS int@2
@@ -181,6 +182,9 @@ JUMP $if_end1!0
 LABEL $else1!0
 LABEL $if_end1!0
 write lf@!x
+=======
+
+>>>>>>> dokumentace
 POPFRAME
 CLEARS
 EXIT int@0
