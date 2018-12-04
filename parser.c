@@ -263,7 +263,6 @@ int rule_preset_fuctions(){
 				return result;//volani execute funkce
 			}
 			if (brackets_counter!=0){
-				printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa\n");
 				return ERROR_2;//volani execute funkce
 			}
 			brackets_counter=temp1;
@@ -272,26 +271,34 @@ int rule_preset_fuctions(){
 		break;
 		case LENGHT:
 			if (set_token_and_return()==LEFT_BRACKET){
+				uzavorkovana_funkce=true;
 				brackets_counter++;
+				if(set_token_and_return() != TYPE_IDENTIFIER && token_type != TYPE_STRING ){
+					return ERROR_5;//volani execute funkce
+				}
 			}
-			if (set_token_and_return()==TYPE_IDENTIFIER){
-				typ_promene=TYPE_STRING;
-				if(zjisti_co_je_id()!=TYPE_STRING){
-					return ERROR_5; //volani execute funkce
-				}	
+			else if(token_type != TYPE_IDENTIFIER && token_type != TYPE_STRING){
+				return ERROR_5;
 			}
-			else if(token_type==TYPE_STRING){
-				set_token_and_return();
+			result = rule_expresion_pusher();
+			if (is_err(result)!=NO_ERROR){
+				return result;
 			}
-			else{
-				return ERROR_5; //volani execute funkce
+			if (typ_promene!=TYPE_STRING){
+
+				return ERROR_5;
 			}
-			if(token_type==RIGHT_BRACKET ){
-				brackets_counter--;
-			}
+			create_frame();
+			gen_call("length");
+			znic_zasobniky();
+			printf("SSSSSSSSSSSSSSSs%d\n", typ_promene);
+
 			if(brackets_counter==0){
 				brackets_counter=temp1;
+				uzavorkovana_funkce=false;
 				return TYPE_INT;
+			}else{
+				return ERROR_5;
 			}
 		break;
 		case SUBSTR:
@@ -394,32 +401,38 @@ int rule_preset_fuctions(){
 		break;
 		case CHR:
 			if (set_token_and_return()==LEFT_BRACKET){
+				uzavorkovana_funkce=true;
 				brackets_counter++;
+				if(set_token_and_return() != TYPE_IDENTIFIER && token_type != TYPE_INT ){
+					return ERROR_5;//volani execute funkce
+				}
 			}
-			if (set_token_and_return()==TYPE_IDENTIFIER){
-				typ_promene=TYPE_INT;
-				if(zjisti_co_je_id()!=TYPE_INT){
-					//pridat do funkce jeste jednu promenou kdyz bude vracet string, tak at se ulozi delka 
-					return ERROR_5; //volani execute funkce
-				}	
+			else if(token_type != TYPE_IDENTIFIER && token_type != TYPE_INT){
+				return ERROR_5;
 			}
-			else if(token_type==TYPE_INT){
-				set_token_and_return();
+			result = rule_expresion_pusher();
+			if (is_err(result)!=NO_ERROR){
+				return result;
 			}
-			else{
-				return ERROR_5; //volani execute funkce
+			if (typ_promene!=TYPE_INT){
+
+				return ERROR_5;
 			}
-			if(token_type==RIGHT_BRACKET ){
-				brackets_counter--;
-			}
+			create_frame();
+			gen_call("chr");
+			znic_zasobniky();
 			if(brackets_counter==0){
 				brackets_counter=temp1;
-				return TYPE_STRING;//TADY SE MUSIME DOMLUVIT NA TOM ze budu vract podle toho co mi vrati dan :D bud NIL nebo STRING
-			}	
+				uzavorkovana_funkce=false;
+				return TYPE_INT;
+			}else{
+				return ERROR_5;
+			}
 		break;
 		default:
 			return ERROR_2; // tady je myšleno když to nebude cokoliv co tady máme uvedeno 
 	}
+
 }
 
 int rule_print(){
@@ -555,7 +568,13 @@ int rule_expresion_pusher(){
 				znic_zasobniky();
 				return NO_ERROR;
 			}
-			if (top_stack==7 && p_tok1==5 && uzavorkovana_funkce==true){
+			if (top_stack==7 && p_tok1==5 && uzavorkovana_funkce==true && generator_popl_token==false){
+				gen_stack_push(TPop(&values));
+				gen_stack_pop("GF","result");
+				znic_zasobniky();
+				return NO_ERROR;
+			}
+			if (top_stack==7 && p_tok1==5 && uzavorkovana_funkce==true && generator_popl_token==true){
 				gen_stack_pop("GF","result");
 				znic_zasobniky();
 				return NO_ERROR;
@@ -624,6 +643,9 @@ int rule_expresion_pusher(){
 				//printf("AAAAAAAAAAAAAAAAAAAAAAAAAAaa\n");
 				remember_token_type = I_DOLLAR;
 				//printf("I_DOLLAR na konci\n");
+			}
+			if (token_type==EQUALS){
+				return ERROR_4;
 			}
 			if (token_type==LEFT_BRACKET){
 				brackets_counter++;
@@ -694,6 +716,9 @@ int rule_expresion_pusher(){
 
 				remember_token_type = I_DOLLAR;
 				//printf("I_DOLLAR na konci\n");
+			}
+			if (token_type==EQUALS){
+				return ERROR_4;
 			}
 			if (token_type==LEFT_BRACKET){
 				brackets_counter++;
