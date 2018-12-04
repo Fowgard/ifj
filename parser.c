@@ -11,7 +11,7 @@ tStack stack; //Zasobnik pro vyrazy
 Token_Stack values; //Zasobnik pro tokeny
 tStack operatory; //Zasobnik pro hodnoty
 tHTable* h_tabulka; // Hashovaci tabulka
-int brackets_counter; //Leve zavorky ++, prave --
+int brackets_counter=0; //Leve zavorky ++, prave --
 int param_counter; //pocitadlo parametru pri definici funkce
 int porovnavani_counter;//pocitadlo >,<,<=,>=,==,!=
 bool already_init=false;//podmínka pro inicializaci parseru
@@ -34,6 +34,7 @@ char *nazev_posledni_ID;
 bool pouziti_relacnich_operatoru;
 int skipovani; //0-ne 1-připrav se 2-skipni
 int remember_gen_place=1;
+bool in_fuction_call=false;
  // simulace pravidla <program> -> <st-list>
 int program(){
 	if(!already_init){
@@ -49,7 +50,7 @@ int program(){
 	}
 	switch(token_type){	
 		case LEFT_BRACKET:
-			brackets_counter++;
+
 		case TYPE_INT:
 		case TYPE_FLOAT:
 		case TYPE_STRING:
@@ -247,19 +248,26 @@ int rule_preset_fuctions(){
 	switch(token_type){
 		case PRINT:
 			if (set_token_and_return()==LEFT_BRACKET){
+				uzavorkovana_funkce=true;
 				brackets_counter++;
+				if(set_token_and_return() < TYPE_IDENTIFIER && token_type > TYPE_STRING ){
+					return ERROR_5;//volani execute funkce
+				}
 			}
-			if(set_token_and_return() < TYPE_IDENTIFIER && token_type > TYPE_STRING ){
-				return ERROR_5;//volani execute funkce
+			else if(token_type < TYPE_IDENTIFIER && token_type > TYPE_STRING){
+				return ERROR_5;
 			}
+
 			result=rule_print();
 			if (is_err(result)!=NO_ERROR){
 				return result;//volani execute funkce
 			}
 			if (brackets_counter!=0){
+				printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa\n");
 				return ERROR_2;//volani execute funkce
 			}
 			brackets_counter=temp1;
+			uzavorkovana_funkce=false;
 			return NIL;
 		break;
 		case LENGHT:
@@ -418,9 +426,11 @@ int rule_print(){
 	int result=NO_ERROR;
 	switch(token_type){
 		case COMMA:
-			if(set_token_and_return() < TYPE_IDENTIFIER && token_type > TYPE_STRING ){
+			if((set_token_and_return() < TYPE_IDENTIFIER && token_type > TYPE_STRING ) && (token_type!=LEFT_BRACKET)){
+				printf("AAAAAAAAAAaa%d\n",token_type);
 				return ERROR_5;
 			}
+
 			result=rule_print();
 			if (is_err(result)!= NO_ERROR){
 				return result;
@@ -430,8 +440,18 @@ int rule_print(){
 		case TYPE_IDENTIFIER:
 		case TYPE_INT:
 		case TYPE_FLOAT:
-			//nacti posli do generatoru tady zase bude muset byt nějakej expresion pusher QQ
-			if (set_token_and_return()==RIGHT_BRACKET && brackets_counter==1){
+		case LEFT_BRACKET:
+			if (token_type==LEFT_BRACKET){
+				brackets_counter++;
+			}
+			result = rule_expresion_pusher();
+			if (is_err(result)!=NO_ERROR){
+				return result;
+			}
+			create_frame();
+			gen_call("print");
+			znic_zasobniky();
+			if (token_type==RIGHT_BRACKET && brackets_counter==1){
 				brackets_counter--;
 				set_token_and_return();
 				return NO_ERROR;
@@ -500,7 +520,7 @@ int rule_expresion_pusher(){
 
 		//Pokud je na vrcholu nonterm, nepracuje se s nontermem ale symbolem pred nim (viz prednaska 8)
 		if(STop(&stack)==NONTERM){
-			//printf("Na vrcholu zásobníku je NONTERM\n");
+		//	printf("Na vrcholu zásobníku je NONTERM\n");
 			is_last_NONTERM = true;
 			SPop(&stack);
 			top_stack = STop(&stack);
@@ -519,9 +539,28 @@ int rule_expresion_pusher(){
 			//gen_clear(); cisteni zasobníku
 			break;
 		}
-// 
+		print_stack(&stack);
+
 		if(prior[top_stack][p_tok1]==N){
-			//printf("ERROR: nedefinovaná operace v tabulce priorit!!!%d %d\n",top_stack, p_tok1);
+			
+			if (brackets_counter >0 && generator_popl_token==false && (token_type== RIGHT_BRACKET || token_type==COMMA)){
+				printf("AAAAAAAAAAAAAAAAAAAaa\n");
+				gen_stack_push(TPop(&values));
+				gen_stack_pop("GF","result");
+				znic_zasobniky();
+				return NO_ERROR;
+
+			}else if(brackets_counter >0 && generator_popl_token==true && (token_type== RIGHT_BRACKET || token_type==COMMA)){
+				gen_stack_pop("GF","result");
+				znic_zasobniky();
+				return NO_ERROR;
+			}
+			if (top_stack==7 && p_tok1==5 && uzavorkovana_funkce==true){
+				gen_stack_pop("GF","result");
+				znic_zasobniky();
+				return NO_ERROR;
+			}
+			printf("ERROR: nedefinovaná operace v tabulce priorit!!!%d %d\n",top_stack, p_tok1);
 			return ERROR_IDK; //NEVIIIIIIIIIIIIIIIIIIIIIM JAKÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝ ERROR
 		}else if(prior[top_stack][p_tok1]==S){//Shiftuji
 			//printf("BUDU shiftovat\n");
@@ -565,19 +604,32 @@ int rule_expresion_pusher(){
 				}
 				SPush(&operatory, token_type);
 		  	}
-	
-			SPush(&stack, p_tok1);
+		
+			if (brackets_counter==0 && token_type== RIGHT_BRACKET && uzavorkovana_funkce==true){
+				brackets_counter++;
+				printf("AAAAAAAAAAAAAAAAAAAAAAa\n");
+			}
+			else{
+				printf("AAAAAAAAAAAAAAAAAAAAAAa%d \n", token_type);
+				SPush(&stack, p_tok1);
+			}
 			print_stack(&stack);
 			if(remember_token_type == I_DOLLAR){
 				remember_token_type = END_OF_FILE;
-				//printf("ANO\n");
+				printf("ANO\n");
 				return ERROR_IDK;
 				break;
 			}else if (set_token_and_return() == END_OF_FILE || token_type == THEN ||
-/*frida*/		 token_type == DO || token_type== END_OF_LINE || token_type == COMMA){
-
+/*frida*/		 token_type == DO || token_type== END_OF_LINE || token_type == COMMA || (brackets_counter>0 && token_type== RIGHT_BRACKET)){
+				//printf("AAAAAAAAAAAAAAAAAAAAAAAAAAaa\n");
 				remember_token_type = I_DOLLAR;
 				//printf("I_DOLLAR na konci\n");
+			}
+			if (token_type==LEFT_BRACKET){
+				brackets_counter++;
+			}
+			else if (token_type==RIGHT_BRACKET){
+				brackets_counter--;
 			}
 			p_tok1 = get_prec_table_index(token_type);
 			if (remember_token_type == LEFT_BRACKET && token_type==RIGHT_BRACKET )
@@ -614,27 +666,43 @@ int rule_expresion_pusher(){
 			if(top_of_stack_prepared_for_reduction(&stack)){
 				//printf("redukuji :D stack:%d expr:%d\n",top_stack,p_tok1);
 			}else{
-				//printf("FATAL ERROR WHEN REDUCING\n");
+				printf("FATAL ERROR WHEN REDUCING\n");
 				return ERROR_IDK;
 			}
 			
 		}else if(prior[top_stack][p_tok1]==E){
 			//printf("Equal :D\n");
+			if (brackets_counter==0 && token_type== RIGHT_BRACKET && uzavorkovana_funkce==true){
+				brackets_counter++;
+				printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAa\n");
 
-			SPush(&stack, p_tok1);
+			}
+			else{
+				printf("AAAAAAAAAAAAAAAAAAAAAAa%d \n", brackets_counter);
+
+				SPush(&stack, p_tok1);
+			}
+			
 
 			if(remember_token_type == I_DOLLAR){
 				remember_token_type = END_OF_FILE;
-				//printf("ANO\n");
+				printf("ANO\n");
 				return ERROR_IDK;
 				break;
 			}else if (set_token_and_return() == END_OF_FILE || token_type == THEN ||
-/*frida*/		 token_type == DO || token_type== END_OF_LINE || token_type == COMMA){
+/*frida*/		 token_type == DO || token_type== END_OF_LINE || token_type == COMMA || (brackets_counter>0 && token_type== RIGHT_BRACKET)){
 
 				remember_token_type = I_DOLLAR;
 				//printf("I_DOLLAR na konci\n");
 			}
-			p_tok1 = get_prec_table_index(token_type);
+			if (token_type==LEFT_BRACKET){
+				brackets_counter++;
+			}
+			else if (token_type==RIGHT_BRACKET){
+				brackets_counter--;
+			}
+				p_tok1 = get_prec_table_index(token_type);
+
 			if (remember_token_type == LEFT_BRACKET && token_type==RIGHT_BRACKET )
 			{
 				token_type=NIL;
@@ -667,7 +735,8 @@ int rule_expresion_pusher(){
 			if(top_of_stack_prepared_for_reduction(&stack)){
 				//printf("equal :D stack:%d expr:%d\n",top_stack,p_tok1);
 			}else{
-				//printf("FATAL ERROR WHEN EQUAL\n");
+				print_stack(&stack);
+				printf("FATAL ERROR WHEN EQUAL\n");
 				return ERROR_IDK;
 			}
 		}
@@ -1552,11 +1621,11 @@ void do_E_rule(tStack *stack){
 
 void print_stack(tStack *stack){
 
-	//printf("TISKNU OBSAH ZÁSOBNÍKU:\n");
+	printf("TISKNU OBSAH ZÁSOBNÍKU:\n");
 	for(int i = 0;i< (stack)->top+1;i++){
-		//printf("%d ", (stack)->a[i]);
+		printf("%d ", (stack)->a[i]);
 	}
-	//printf("\nKONEC ZÁSOBNÍKU\n");
+	printf("\nKONEC ZÁSOBNÍKU\n");
 }
 void print_token_stack(Token_Stack *st){
 	//printf("TISKNU OBSAH ZÁSOBNÍKU TOKENůůů:\n");
