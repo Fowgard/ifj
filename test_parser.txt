@@ -1,9 +1,4 @@
-
-x = inputi()
-print x
-
-x = inputs
-print x
-
-x = inputf()
-print x
+asd 5
+def asd (x)
+	print (x)
+end
