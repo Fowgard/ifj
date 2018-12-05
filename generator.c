@@ -58,6 +58,7 @@ int if_counter = 0;
 int if_block_counter = 0;
 int while_counter = 0;
 int while_block_counter = 0;
+int aritm_instr_counter = 0;
 
 void gen_substr()
 {
@@ -239,7 +240,12 @@ void gen_zero_division
 	CAT_INST("CLEARS");
 	CAT_INST("EXIT int@9");
 }
-
+void gen_type_error()
+{
+	CAT_INST("LABEL $type_error");
+	CAT_INST("CLEARS");
+	CAT_INST("EXIT int@4");
+}
 void gen_builtins()
 {
 	CAT_INST("");
@@ -252,6 +258,7 @@ void gen_builtins()
 	gen_inputi();
 	gen_inputf();
 	gen_zero_division();
+	gen_type_error();
 
 }
 void switch_stack(){
@@ -383,7 +390,12 @@ void gen_val_from_token(token_t token)
 			}
 			else
 			{
-				(gen_to_main == 1) ? lexem_putchar(code_main, symbol) : lexem_putchar(code_rest, symbol);
+				if (gen_to_main == 1)
+					lexem_putchar(code_main, (symbol));
+				else if(gen_to_main == 0)
+					lexem_putchar(code_rest, (symbol));
+				else
+					lexem_putchar(code_while, (symbol));
 			}
 
 			i++;
@@ -528,9 +540,44 @@ void gen_stack_pop(char *frame, char *v_name)
 }
 
 void gen_stack_add()
-{
+{	
+	//skopirovani hodnot
+	CAT_INST("POPS GF@!tmp1");
+	CAT_INST("POPS GF@!tmp2");
+	CAT_INST("PUSHS GF@!tmp2");
+	CAT_INST("PUSHS GF@!tmp1");
+	//TODO kontrola typu nevim jestli muzu vracet do stejne promenne
+	CAT_INST("TYPE GF@!tmp1 GF@!tmp1");
+	CAT_INST("TYPE GF@!tmp2 GF@!tmp2");
+	CAT_INST("EQ GF@!tmp3 GF@!tmp1 GF@!tmp2")
+	CAT_INST("JUMPIFEQ $type_error GF@!tmp3 bool@false");
+	//pokud jsou dva stringy
+	CAT_STR("JUMPIFEQ $concat");
+	CAT_NUM(aritm_instr_counter);
+	CAT_INST(" GF@!tmp1 string@string");
+
 
 	CAT_INST("ADDS");
+	CAT_STR("JUMP $add_end");
+	CAT_NUM(aritm_instr_counter);
+	CAT_INST("");
+	//concat
+	CAT_STR("LABEL $concat");
+	CAT_NUM(aritm_instr_counter);
+	CAT_INST("");
+
+	CAT_INST("POPS GF@!tmp1");
+	CAT_INST("POPS GF@!tmp2");
+
+	CAT_INST("CONCAT GF@!tmp3 GF@!tmp2 GF@!tmp1");
+	CAT_INST("PUSHS GF@!tmp3");
+
+
+	//end
+	CAT_STR("LABEL $add_end");
+	CAT_NUM(aritm_instr_counter);
+	CAT_INST("");
+	aritm_instr_counter++;
 }
 
 void gen_stack_sub()
