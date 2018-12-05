@@ -1,4 +1,9 @@
-asd 5
-def asd (x)
-	print (x)
+def foo (z)
+	z="asd"
 end
+
+x=1
+y=2
+x= foo x
+y= foo(y)
+print x

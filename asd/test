@@ -74,7 +74,7 @@ POPFRAME
 RETURN
 LABEL $chr_error
 CLEARS
-EXIT int@49
+EXIT int@6
 
 LABEL $ord
 PUSHFRAME
@@ -125,17 +125,19 @@ READ LF@!retvar float
 POPFRAME
 RETURN
 
+LABEL $zero_division
+CLEARS
+EXIT int@9
 
-# zacatek funkce: asd
-LABEL $asd
+# zacatek funkce: foo
+LABEL $foo
 PUSHFRAME
 DEFVAR LF@!retvar
-DEFVAR LF@!x
-MOVE LF@!x LF@!0
-PUSHS LF@!x
+DEFVAR LF@!z
+MOVE LF@!z LF@!0
+PUSHS string@asd
 POPS GF@!result
-CREATEFRAME
-CALL $print
+MOVE LF@!z GF@!result
 MOVE LF@!retvar GF@!result
 POPFRAME
 RETURN
@@ -145,12 +147,36 @@ LABEL $$main
 CREATEFRAME
 PUSHFRAME
 
+DEFVAR LF@!x
+MOVE LF@!x nil@nil
+PUSHS int@1
+POPS GF@!result
+MOVE LF@!x GF@!result
+DEFVAR LF@!y
+MOVE LF@!y nil@nil
+PUSHS int@2
+POPS GF@!result
+MOVE LF@!y GF@!result
 CREATEFRAME
-PUSHS int@5
+PUSHS LF@!x
 POPS GF@!result
 DEFVAR TF@!0
 MOVE TF@!0 GF@!result
-CALL $asd
+CALL $foo
+MOVE GF@!result TF@!retvar
+MOVE LF@!x GF@!result
+CREATEFRAME
+PUSHS LF@!y
+POPS GF@!result
+DEFVAR TF@!0
+MOVE TF@!0 GF@!result
+CALL $foo
+MOVE GF@!result TF@!retvar
+MOVE LF@!y GF@!result
+PUSHS LF@!x
+POPS GF@!result
+CREATEFRAME
+CALL $print
 
 POPFRAME
 CLEARS

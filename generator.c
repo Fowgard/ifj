@@ -233,7 +233,7 @@ void print_output()
 	fputs(code_main->word, output_file);	
 	fclose(output_file);
 }
-void gen_zero_division
+void gen_zero_division()
 {
 	CAT_INST("LABEL $zero_division");
 	CAT_INST("CLEARS");
@@ -383,7 +383,12 @@ void gen_val_from_token(token_t token)
 			}
 			else
 			{
-				(gen_to_main == 1) ? lexem_putchar(code_main, symbol) : lexem_putchar(code_rest, symbol);
+				if (gen_to_main == 1)
+					lexem_putchar(code_main, (symbol));
+				else if(gen_to_main == 0)
+					lexem_putchar(code_rest, (symbol));
+				else
+					lexem_putchar(code_while, (symbol));
 			}
 
 			i++;
@@ -708,7 +713,7 @@ void result_to_var(char *v_name)
 	CAT_STR(" GF@!result");
 	CAT_INST("");
 }
-void retvar_to_result(char *v_name)
+void retvar_to_result()
 {
 	CAT_STR("MOVE GF@!result TF@!retvar");
 	CAT_INST("");

@@ -13,7 +13,6 @@
 
 
 extern FILE* source_file;
-//extern int file_begin;
 
 
 
@@ -33,15 +32,9 @@ int main(int argc, char *argv[])
 		exit(99);
 	}
 	
-//	file_begin =1;
-	
-	//zatim v komentu, predchystane na finalni verzi, volani parse
-	/*
-	int resul = parse;
-	*/
 
 	printf("ZACATEK parseru\n");
-	printf("%d\n",program());
+	int result =program();
 	printf("KONEC parseru\n");
 	free_all();
 	fclose(source_file);

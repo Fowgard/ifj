@@ -101,7 +101,7 @@ void keyword_check(token_t *token, lexem_t *lexem)
 		token->type = INPUTF;
 	else if (!strcmp(lexem->word, "print"))
 		token->type = PRINT;
-	else if (!strcmp(lexem->word, "lenght"))
+	else if (!strcmp(lexem->word, "length"))
 		token->type = LENGHT;
 	else if (!strcmp(lexem->word, "substr"))
 		token->type = SUBSTR;

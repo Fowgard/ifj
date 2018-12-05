@@ -46,10 +46,4 @@ int is_err(int ret);
 bool is_operator();
 bool is_num();
 void init_parser();
-
 void check_data_type();
-
-
-
-void print_stack(tStack *stack);
-void print_token_stack(Token_Stack *st); 
