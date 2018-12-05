@@ -52,6 +52,3 @@ int get_prec_table_index(int symbol)
 
 
 //------------------------------------
-int token_type_to_prior_table(int token_type){
-	
-}

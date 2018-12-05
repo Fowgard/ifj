@@ -11,6 +11,7 @@ extern lexem_t *code_rest;
 FILE *source_file;
 int file_begin = 1;
 
+
 void print_file()
 {
 	char c = fgetc(source_file); 

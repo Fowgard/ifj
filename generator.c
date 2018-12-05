@@ -45,6 +45,7 @@
 		CAT_STR(buffer);\
 	}while(0) \
 
+extern int uvnitr_funkce;
 lexem_t *code_main;
 lexem_t *code_rest;
 lexem_t *code_while;
@@ -146,9 +147,9 @@ void gen_ord()
 	// i>length?
 	CAT_INST("GT LF@!relation LF@!1 LF@!length");
 	CAT_INST("JUMPIFEQ ord_end LF@!relation bool@true");
-	CAT_INST("STRI2INT LF@!retval LF@!0 LF@!1");
+	CAT_INST("STRI2INT LF@!retvar LF@!0 LF@!1");
 	CAT_INST("LABEL $ord_end");
-	gen_def_end();
+	gen_built_end();
 	CAT_INST("");
 
 }
@@ -163,7 +164,7 @@ void gen_chr()
 	CAT_INST("GT LF@!relation LF@!0 int@255");
 	CAT_INST("JUMPIFEQ $chr_error LF@!relation bool@true");
 	CAT_INST("INT2CHAR LF@!retvar LF@!0");
-	gen_def_end();
+	gen_built_end();
 	CAT_INST("LABEL $chr_error");
 	CAT_INST("CLEARS");
 	CAT_INST("EXIT int@49");
@@ -178,7 +179,7 @@ void gen_length()
 	CAT_INST("LABEL $length");
 	gen_frame_retvar();
 	CAT_INST("STRLEN LF@!retvar LF@!0");
-	gen_def_end();
+	gen_built_end();
 	CAT_INST("");
 
 }
@@ -188,8 +189,8 @@ void gen_print()
 	CAT_INST("LABEL $print");
 	gen_frame_retvar();
 	CAT_INST("WRITE GF@!result");
-	CAT_INST("MOVE LF@!retvar nil@nil");
-	gen_def_end();
+	CAT_INST("MOVE LF@!retvar nil@nil"); 
+	gen_built_end();
 	CAT_INST("");
 
 }
@@ -201,7 +202,7 @@ void gen_inputi()
 	CAT_INST("LABEL $inputi");
 	gen_frame_retvar();
 	CAT_INST("READ LF@!retvar int");
-	gen_def_end();
+	gen_built_end();
 	CAT_INST("");
 
 }
@@ -211,7 +212,7 @@ void gen_inputf()
 	CAT_INST("LABEL $inputf");
 	gen_frame_retvar();
 	CAT_INST("READ LF@!retvar float");
-	gen_def_end();
+	gen_built_end();
 	CAT_INST("");
 
 }
@@ -220,7 +221,7 @@ void gen_inputs()
 	CAT_INST("LABEL $inputs");
 	gen_frame_retvar();
 	CAT_INST("READ LF@!retvar string");
-	gen_def_end();
+	gen_built_end();
 	CAT_INST("");
 
 
@@ -409,16 +410,10 @@ void push_true()
 	CAT_INST("PUSHS bool@true");
 }
 
-void gen_move_nil(char *v_name)
-{
-
-}
-
 
 void gen_def_start(char *f_name)
 {
 	gen_to_main = 0;
-
 	CAT_INST("");
 	CAT_STR("# zacatek funkce: "); 
 	CAT_STR(f_name); 
@@ -428,22 +423,29 @@ void gen_def_start(char *f_name)
 	CAT_STR(f_name);
 	CAT_INST("");
 	CAT_INST("PUSHFRAME");
+	uvnitr_funkce=1;
+
 
 }
-
+/*
 void gen_def_return()//nemusi byt vzdy na konci = proto zvlast
 {
 	CAT_INST("MOVE LF@!retvar LF@!result");
 	CAT_INST("POPFRAME");
 	CAT_INST("RETURN");
 }
+*/
+void gen_built_end(){
+	CAT_INST("POPFRAME");
+	CAT_INST("RETURN");
+}
 
 void gen_def_end()
 {
-
-	//CAT_STR("LABEL $"); CAT_STR(function_id); CAT_STR("%return\n"); na co?
+	CAT_INST("MOVE LF@!retvar LF@!result");
 	CAT_INST("POPFRAME");
 	CAT_INST("RETURN");
+	gen_to_main = 1;
 }
 void create_frame()//musi se vyrvorit frame pro parametry, pro lepsi prehlednost pri volani z parseru
 {
@@ -471,7 +473,7 @@ void gen_assign_from_call(char *v_name)
 	CAT_INST(" TF@!retvar");
 }
 
-void gen_argument(token_t arg, int order)
+void gen_argument(int order)
 {
 	CAT_STR("DEFVAR TF@!");
 	CAT_NUM(order);
@@ -479,7 +481,7 @@ void gen_argument(token_t arg, int order)
 
 	CAT_STR("MOVE TF@!");
 	CAT_NUM(order);
-	gen_val_from_token(arg);
+	CAT_STR(" GF@!result");
 	CAT_INST("");	
 }
 
@@ -679,6 +681,12 @@ void result_to_var(char *v_name)
 	CAT_STR(" GF@!result");
 	CAT_INST("");
 }
+void retvar_to_result(char *v_name)
+{
+	CAT_STR("MOVE GF@!result TF@!retvar");
+	CAT_INST("");
+}
+
 
 void gen_while_start()
 {

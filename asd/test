@@ -65,16 +65,14 @@ LABEL $chr
 PUSHFRAME
 DEFVAR LF@!retvar
 DEFVAR LF@!relation
-LT LF@!relation GF@!result int@0
+LT LF@!relation LF@!0 int@0
 JUMPIFEQ $chr_error LF@!relation bool@true
-GT LF@!relation GF@!result int@255
+GT LF@!relation LF@!0 int@255
 JUMPIFEQ $chr_error LF@!relation bool@true
-INT2CHAR LF@!retvar GF@!result
-write LF@!retvar
+INT2CHAR LF@!retvar LF@!0
 POPFRAME
 RETURN
 LABEL $chr_error
-write GF@!result
 CLEARS
 EXIT int@49
 
@@ -94,7 +92,7 @@ MOVE LF@!length TF@!retvar
 SUB LF@!length LF@!length int@1
 GT LF@!relation LF@!1 LF@!length
 JUMPIFEQ ord_end LF@!relation bool@true
-STRI2INT LF@!retval LF@!0 LF@!1
+STRI2INT LF@!retvar LF@!0 LF@!1
 LABEL $ord_end
 POPFRAME
 RETURN
@@ -135,13 +133,30 @@ PUSHFRAME
 
 DEFVAR LF@!x
 MOVE LF@!x nil@nil
-PUSHS int@65
-POPS GF@!result
+CREATEFRAME
+CALL $inputi
+MOVE GF@!result TF@!retvar
 MOVE LF@!x GF@!result
 PUSHS LF@!x
 POPS GF@!result
 CREATEFRAME
-CALL $chr
+CALL $print
+CREATEFRAME
+CALL $inputs
+MOVE GF@!result TF@!retvar
+MOVE LF@!x GF@!result
+PUSHS LF@!x
+POPS GF@!result
+CREATEFRAME
+CALL $print
+CREATEFRAME
+CALL $inputf
+MOVE GF@!result TF@!retvar
+MOVE LF@!x GF@!result
+PUSHS LF@!x
+POPS GF@!result
+CREATEFRAME
+CALL $print
 
 POPFRAME
 CLEARS

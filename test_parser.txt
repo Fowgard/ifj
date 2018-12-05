@@ -1,3 +1,9 @@
-x=65
-y="asd"
-ord(y , x)
+
+x = inputi()
+print x
+
+x = inputs
+print x
+
+x = inputf()
+print x

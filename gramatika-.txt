@@ -87,7 +87,7 @@ WRITE GF@!result
 	- nil je vypsán jako prázdná řetězec
 	- vrací vždy hodnotu nil
 
-#	length(s) 
+#	lenght(s) 
 	- Vrátí délku (počet znaků) řetězce zadaného jediným parametrem s.	Např. length("x\nz") vrací 3. 
 
 #	substr(s, i, n)

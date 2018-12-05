@@ -41,11 +41,15 @@ int set_token_and_return();
 int pop_token();
 bool top_of_stack_prepared_for_reduction(tStack *stack);
 void do_E_rule(tStack *stack);
-int get_rule_from_stack(int symbol_count);
 int rule_expr();
 int is_err(int ret);
 bool is_operator();
 bool is_num();
 void init_parser();
-void print_stack(tStack *stack);
+
 void check_data_type();
+
+
+
+void print_stack(tStack *stack);
+void print_token_stack(Token_Stack *st); 

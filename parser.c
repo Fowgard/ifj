@@ -1,8 +1,17 @@
 #include "parser.h"
   
+#define TABULKA(inst) \
+	do{ \
+		if (uvnitr_funkce == 0)\
+			h_tabulka\
+		else\
+			tmp_tabulka\
+	}while(0)\
+
 extern int gen_to_main;
 extern int while_counter;
 extern int if_counter;
+
 int token_type; //aktualni token
 char *token_attribute; //atribut aktualniho tokenu
 token_t *token = NULL;
@@ -11,6 +20,7 @@ tStack stack; //Zasobnik pro vyrazy
 Token_Stack values; //Zasobnik pro tokeny
 tStack operatory; //Zasobnik pro hodnoty
 tHTable* h_tabulka; // Hashovaci tabulka
+tHTable* tmp_tabulka; // Hashovaci tabulka
 int brackets_counter=0; //Leve zavorky ++, prave --
 int param_counter; //pocitadlo parametru pri definici funkce
 int porovnavani_counter;//pocitadlo >,<,<=,>=,==,!=
@@ -59,6 +69,7 @@ int program(){
 			if(is_err(res) != NO_ERROR){
 				return res;
 			}
+
 		break;
 		case DEF:
 			uvnitr_funkce++;
@@ -125,7 +136,6 @@ void call_generator(int resu){
 		//printf("zavolam generator pro posledni radek \n");
 	}
 }
-
 int rule_KW(){
 	int result=NO_ERROR;
 	switch(token_type){
@@ -208,6 +218,7 @@ int rule_KW(){
 					if (is_err(result)!=NO_ERROR){
 						return result;
 					}
+					//TODO chybi tu resturn nebo to ma propadnout
 				}
 				else{
 					return ERROR_2;
@@ -235,11 +246,13 @@ int rule_KW(){
 				
 				return NO_ERROR;	
 			}
+		break;
 		default:
 			return rule_preset_fuctions();
 
 
 	}
+	return ERROR_2;
 }
 int rule_preset_fuctions(){
 	int result=NO_ERROR;
@@ -267,7 +280,8 @@ int rule_preset_fuctions(){
 			}
 			brackets_counter=temp1;
 			uzavorkovana_funkce=false;
-			return NIL;
+			typ_promene=NIL;
+			return NO_ERROR;
 		break;
 		case LENGHT:
 			if (set_token_and_return()==LEFT_BRACKET){
@@ -276,10 +290,12 @@ int rule_preset_fuctions(){
 				if(set_token_and_return() != TYPE_IDENTIFIER && token_type != TYPE_STRING ){
 					return ERROR_5;//volani execute funkce
 				}
+			
 			}
 			else if(token_type != TYPE_IDENTIFIER && token_type != TYPE_STRING){
 				return ERROR_5;
 			}
+			create_frame();	
 			result = rule_expresion_pusher();
 			if (is_err(result)!=NO_ERROR){
 				return result;
@@ -288,72 +304,84 @@ int rule_preset_fuctions(){
 
 				return ERROR_5;
 			}
-			create_frame();
+
+			gen_argument(0);
 			gen_call("length");
 			znic_zasobniky();
 			if(brackets_counter==0){
 				brackets_counter=temp1;
 				uzavorkovana_funkce=false;
-				return TYPE_INT;
+				typ_promene=TYPE_INT;
+				return NO_ERROR;
 			}else{
 				return ERROR_5;
 			}
 		break;
 		case SUBSTR:
-			if (set_token_and_return()==LEFT_BRACKET){
+			if (set_token_and_return()==LEFT_BRACKET){			
+				uzavorkovana_funkce=true;
 				brackets_counter++;
+				if(set_token_and_return() != TYPE_IDENTIFIER && token_type != TYPE_STRING ){
+					return ERROR_5;//volani execute funkce
+				}
 			}
-			if (set_token_and_return()==TYPE_IDENTIFIER){
-				typ_promene=TYPE_STRING;
-				if(zjisti_co_je_id()!=TYPE_STRING){
-					//pridat do funkce jeste jednu promenou kdyz bude vracet string, tak at se ulozi delka 
-					return ERROR_5; //volani execute funkce
-				}	
+			
+			else if(token_type != TYPE_IDENTIFIER && token_type != TYPE_STRING){
+				return ERROR_5;
 			}
-			else if(token_type==TYPE_STRING){
-				set_token_and_return();
+			create_frame();
+			result = rule_expresion_pusher();
+			if (is_err(result)!=NO_ERROR){
+				return result;
 			}
-			else{
-				return ERROR_5; //volani execute funkce
+			if (typ_promene!=TYPE_STRING){
+
+				return ERROR_5;
 			}
-			if(token_type!=COMMA && (set_token_and_return()!=TYPE_INT || token_type!=TYPE_IDENTIFIER)){
-				return ERROR_5; //volani execute funkce
+			if (token_type!=COMMA){
+				return ERROR_5;
 			}
-			if (token_type==TYPE_IDENTIFIER){
-				typ_promene=TYPE_INT;
-				if(zjisti_co_je_id()!=TYPE_INT){
-					//pridat do funkce jeste jednu promenou kdyz bude vracet string, tak at se ulozi delka 
-				return ERROR_5; //volani execute funkce
-				}		
+
+			if(set_token_and_return() != TYPE_IDENTIFIER && token_type != TYPE_INT){
+				return ERROR_5;
 			}
-			else if(token_type==TYPE_INT){
-				set_token_and_return();
+
+			typ_promene=WITHOUT_TYPE;
+			gen_argument(0);
+			znic_zasobniky();
+
+			result = rule_expresion_pusher();
+			if (is_err(result)!=NO_ERROR){
+				return result;
 			}
-			else{
-				return ERROR_5; //volani execute funkce
+			if (typ_promene!=TYPE_INT){
+
+				return ERROR_5;
 			}
-			if(token_type!=COMMA && (set_token_and_return()!=TYPE_INT || token_type!=TYPE_IDENTIFIER)){
-				return ERROR_5; //volani execute funkce
+			if(set_token_and_return() != TYPE_IDENTIFIER && token_type != TYPE_INT){
+				return ERROR_5;
 			}
-			if (token_type==TYPE_IDENTIFIER){
-				typ_promene=TYPE_INT;
-				if(zjisti_co_je_id()!=TYPE_INT){
-					//pridat do funkce jeste jednu promenou kdyz bude vracet string, tak at se ulozi delka 
-				return ERROR_5; //volani execute funkce
-				}		
+			typ_promene=WITHOUT_TYPE;
+
+			gen_argument(1);
+			znic_zasobniky();
+			result = rule_expresion_pusher();
+			if (is_err(result)!=NO_ERROR){
+				return result;
 			}
-			else if(token_type==TYPE_INT){
-				set_token_and_return();
+			if (typ_promene!=TYPE_INT){
+
+				return ERROR_5;
 			}
-			else{
-				return ERROR_5; //volani execute funkce
-			}
-			if(token_type==RIGHT_BRACKET ){
-				brackets_counter--;
-			}
+
+			gen_argument(2);
+			gen_call("substr");
+			znic_zasobniky();
 			if(brackets_counter==0){
 				brackets_counter=temp1;
-				return TYPE_STRING;//TADY SE MUSIME DOMLUVIT NA TOM ze budu vract podle toho co mi vrati dan :D bud NIL nebo STRING
+				uzavorkovana_funkce=false;
+				typ_promene=TYPE_STRING;
+				return NO_ERROR;//TADY SE MUSIME DOMLUVIT NA TOM ze budu vract podle toho co mi vrati dan :D bud NIL nebo STRING
 			}
 
 		case ORD:
@@ -363,10 +391,12 @@ int rule_preset_fuctions(){
 				if(set_token_and_return() != TYPE_IDENTIFIER && token_type != TYPE_STRING ){
 					return ERROR_5;//volani execute funkce
 				}
+			
 			}
 			else if(token_type != TYPE_IDENTIFIER && token_type != TYPE_STRING){
 				return ERROR_5;
 			}
+			create_frame();
 			result = rule_expresion_pusher();
 			if (is_err(result)!=NO_ERROR){
 				return result;
@@ -383,6 +413,7 @@ int rule_preset_fuctions(){
 				return ERROR_5;
 			}
 			typ_promene=WITHOUT_TYPE;
+			gen_argument(0);
 			znic_zasobniky();
 			result = rule_expresion_pusher();
 			if (is_err(result)!=NO_ERROR){
@@ -392,14 +423,14 @@ int rule_preset_fuctions(){
 
 				return ERROR_5;
 			}
-			result_to_var("GF@!tmp1")
-			create_frame();
+			gen_argument(1);
 			gen_call("ord");
 			znic_zasobniky();
 			if(brackets_counter==0){
 				brackets_counter=temp1;
 				uzavorkovana_funkce=false;
-				return TYPE_INT;
+				typ_promene=TYPE_INT;
+				return NO_ERROR;
 			}else{
 				return ERROR_5;
 			}
@@ -411,10 +442,12 @@ int rule_preset_fuctions(){
 				if(set_token_and_return() != TYPE_IDENTIFIER && token_type != TYPE_INT ){
 					return ERROR_5;//volani execute funkce
 				}
+						
 			}
 			else if(token_type != TYPE_IDENTIFIER && token_type != TYPE_INT){
 				return ERROR_5;
 			}
+			create_frame();	
 			result = rule_expresion_pusher();
 			if (is_err(result)!=NO_ERROR){
 				return result;
@@ -423,29 +456,76 @@ int rule_preset_fuctions(){
 
 				return ERROR_5;
 			}
-			create_frame();
+
+			gen_argument(0);
 			gen_call("chr");
 			znic_zasobniky();
 			if(brackets_counter==0){
 				brackets_counter=temp1;
 				uzavorkovana_funkce=false;
-				return TYPE_INT;
+				typ_promene=TYPE_STRING;
+				return NO_ERROR;
 			}else{
 				return ERROR_5;
 			}
 		break;
+		case INPUTS:
+			if (set_token_and_return()==LEFT_BRACKET){
+				if(set_token_and_return() != RIGHT_BRACKET){
+					return ERROR_5;//volani execute funkce
+				}
+			
+			}
+			else if(token_type == RIGHT_BRACKET){
+					return ERROR_5;//volani execute funkce
+			}
+			create_frame();	
+			gen_call("inputs");
+			brackets_counter=temp1;
+			typ_promene=TYPE_STRING;
+			return NO_ERROR;
+		break;
+		case INPUTF:
+			if (set_token_and_return()==LEFT_BRACKET){
+				if(set_token_and_return() != RIGHT_BRACKET){
+					return ERROR_5;//volani execute funkce
+				}
+			
+			}
+			else if(token_type == RIGHT_BRACKET){
+					return ERROR_5;//volani execute funkce
+			}
+			create_frame();	
+			gen_call("inputf");
+			brackets_counter=temp1;
+			typ_promene=TYPE_FLOAT;
+			return NO_ERROR;
+		break;
+		case INPUTI:
+			if (set_token_and_return()==LEFT_BRACKET){
+				if(set_token_and_return() != RIGHT_BRACKET){
+					return ERROR_5;//volani execute funkce
+				}
+			
+			}
+			else if(token_type == RIGHT_BRACKET){
+					return ERROR_5;//volani execute funkce
+			}
+			create_frame();	
+			gen_call("inputi");
+			brackets_counter=temp1;
+			typ_promene=TYPE_INT;
+			return NO_ERROR;
+		break;
 		default:
 			return ERROR_2; // tady je myšleno když to nebude cokoliv co tady máme uvedeno 
 	}
-
 }
-
 int rule_print(){
 	int result=NO_ERROR;
 	switch(token_type){
 		case COMMA:
 			if((set_token_and_return() < TYPE_IDENTIFIER && token_type > TYPE_STRING ) && (token_type!=LEFT_BRACKET)){
-				printf("AAAAAAAAAAaa%d\n",token_type);
 				return ERROR_5;
 			}
 
@@ -489,20 +569,16 @@ int rule_print(){
 			return ERROR_5;
 	}
 }
-
 int check_end(){
 	if(set_token_and_return()==END_OF_LINE || token_type==END_OF_FILE){
 		return NO_ERROR;					
 	}
-	else{
-		return ERROR_2;
-	}
+	return ERROR_2;
 }
 int rule_expresion_pusher(){
 	typ_promene=WITHOUT_TYPE;
 	tStack tmp_s;
 	SInit(&tmp_s);
-	int result=NO_ERROR;
 	remember_token_type=token_type;
 	int p_tok1;
 	int2float=false;
@@ -514,22 +590,24 @@ int rule_expresion_pusher(){
 		SPush(&stack, top_stack);	
 	}
 	generator_popl_token=false;
-	bool is_last_NONTERM = false;
 	p_tok1 = get_prec_table_index(token_type);
-/*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
-				if (is_err(set_type_promene(token_type))!=NO_ERROR){
-/**/				return set_type_promene(token_type);
-/**/			}
-/**/		}
-/**/		else if (token_type==TYPE_IDENTIFIER){
 
-/**/			int IDecko=check_id();
-/**/			if (is_err(set_type_promene(IDecko))!=NO_ERROR){
-/**/				return set_type_promene(IDecko);
-/**/			}
-/**/			
-/**/
-/*frida*/	}
+			if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
+				if (is_err(set_type_promene(token_type))!=NO_ERROR){
+
+					return set_type_promene(token_type);
+				}
+			}
+			else if (token_type==TYPE_IDENTIFIER){
+
+				int IDecko=check_id();
+				if (is_err(set_type_promene(IDecko))!=NO_ERROR){
+					return set_type_promene(IDecko);
+				}
+				
+	
+			}
+
 	//printf("%d\n",p_tok1 );
 	//printf("%d\n",top_stack );
 	while(!(top_stack == I_DOLLAR && p_tok1 == I_DOLLAR)){
@@ -539,13 +617,11 @@ int rule_expresion_pusher(){
 		//Pokud je na vrcholu nonterm, nepracuje se s nontermem ale symbolem pred nim (viz prednaska 8)
 		if(STop(&stack)==NONTERM){
 		//	printf("Na vrcholu zásobníku je NONTERM\n");
-			is_last_NONTERM = true;
 			SPop(&stack);
 			top_stack = STop(&stack);
 			SPush(&stack, NONTERM);
 		}else{			
 			top_stack = STop(&stack);
-			is_last_NONTERM = false;
 		}
 
 		if((top_stack == I_DOLLAR) && (p_tok1 == I_DOLLAR)){
@@ -584,7 +660,7 @@ int rule_expresion_pusher(){
 				znic_zasobniky();
 				return NO_ERROR;
 			}
-			printf("ERROR: nedefinovaná operace v tabulce priorit!!!%d %d\n",top_stack, p_tok1);
+			//printf("ERROR: nedefinovaná operace v tabulce priorit!!!%d %d\n",top_stack, p_tok1);
 			return ERROR_IDK; //NEVIIIIIIIIIIIIIIIIIIIIIM JAKÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝÝ ERROR
 		}else if(prior[top_stack][p_tok1]==S){//Shiftuji
 			//printf("BUDU shiftovat\n");
@@ -644,12 +720,12 @@ int rule_expresion_pusher(){
 				return ERROR_IDK;
 				break;
 			}else if (set_token_and_return() == END_OF_FILE || token_type == THEN ||
-/*frida*/		 token_type == DO || token_type== END_OF_LINE || token_type == COMMA || (brackets_counter>0 && token_type== RIGHT_BRACKET)){
+				 token_type == DO || token_type== END_OF_LINE || token_type == COMMA || (brackets_counter>0 && token_type== RIGHT_BRACKET)){
 				//printf("AAAAAAAAAAAAAAAAAAAAAAAAAAaa\n");
 				remember_token_type = I_DOLLAR;
 				//printf("I_DOLLAR na konci\n");
 			}
-			if (token_type==EQUALS){
+			if (token_type==EQUALS){				
 				return ERROR_4;
 			}
 			if (token_type==LEFT_BRACKET){
@@ -674,19 +750,20 @@ int rule_expresion_pusher(){
 				return NO_ERROR;
 			}
 			remember_token_type=token_type;
-/*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
-/**/			if (is_err(set_type_promene(token_type))!=NO_ERROR){
-/**/				return set_type_promene(token_type);
-/**/			}
-/**/		}
-/**/		else if (token_type==TYPE_IDENTIFIER){
-/**/			int IDecko=check_id();
-/**/			if (is_err(set_type_promene(IDecko))!=NO_ERROR){
-/**/				return set_type_promene(IDecko);
-/**/			}
-/**/		
-/**/
-/*frida*/	}
+			if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
+				if (is_err(set_type_promene(token_type))!=NO_ERROR){
+					return set_type_promene(token_type);
+				}
+			}
+			else if (token_type==TYPE_IDENTIFIER){
+				int IDecko=check_id();
+				if (is_err(set_type_promene(IDecko))!=NO_ERROR){
+
+					return set_type_promene(IDecko);
+				}
+			
+	
+			}
 
 		}else if(prior[top_stack][p_tok1]==R){//Redukuji
 			//printf("BUDU REDUKOVAT: %d %d\n", top_stack,p_tok1);
@@ -713,11 +790,11 @@ int rule_expresion_pusher(){
 
 			if(remember_token_type == I_DOLLAR){
 				remember_token_type = END_OF_FILE;
-				printf("ANO\n");
+				//printf("ANO\n");
 				return ERROR_IDK;
 				break;
 			}else if (set_token_and_return() == END_OF_FILE || token_type == THEN ||
-/*frida*/		 token_type == DO || token_type== END_OF_LINE || token_type == COMMA || (brackets_counter>0 && token_type== RIGHT_BRACKET)){
+				 token_type == DO || token_type== END_OF_LINE || token_type == COMMA || (brackets_counter>0 && token_type== RIGHT_BRACKET)){
 
 				remember_token_type = I_DOLLAR;
 				//printf("I_DOLLAR na konci\n");
@@ -741,6 +818,7 @@ int rule_expresion_pusher(){
 				gen_stack_pop("GF","result");
 				znic_zasobniky();
 				if ( typ_promene != WITHOUT_TYPE && typ_promene!=NIL){
+
 					return ERROR_4;
 				}
 				set_token_and_return();
@@ -748,25 +826,25 @@ int rule_expresion_pusher(){
 				return NO_ERROR;
 			}
 			remember_token_type=token_type;
-/*frida*/	if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
-/**/			if (is_err(set_type_promene(token_type))!=NO_ERROR){
-/**/				return set_type_promene(token_type);
-/**/			}
-/**/		}
-/**/		else if (token_type==TYPE_IDENTIFIER){
-/**/			int IDecko=check_id();
-/**/			if (is_err(set_type_promene(IDecko))!=NO_ERROR){
-/**/				return set_type_promene(IDecko);
-/**/			}
-/**/	
-/**/
-/*frida*/	}
+			if (token_type!=TYPE_IDENTIFIER && (token_type>=TYPE_INT && token_type<=TYPE_STRING)){
+				if (is_err(set_type_promene(token_type))!=NO_ERROR){
+					return set_type_promene(token_type);
+				}
+			}
+			else if (token_type==TYPE_IDENTIFIER){
+				int IDecko=check_id();
+				if (is_err(set_type_promene(IDecko))!=NO_ERROR){
+					return set_type_promene(IDecko);
+				}
+		
+	
+			}
 
 			if(top_of_stack_prepared_for_reduction(&stack)){
 				//printf("equal :D stack:%d expr:%d\n",top_stack,p_tok1);
 			}else{
 				print_stack(&stack);
-				printf("FATAL ERROR WHEN EQUAL\n");
+				//printf("FATAL ERROR WHEN EQUAL\n");
 				return ERROR_IDK;
 			}
 		}
@@ -786,8 +864,6 @@ int rule_expresion_pusher(){
 	porovnavani_counter=0;
 	return NO_ERROR;
 }
-
-
 int set_type_promene(int typu){
 	if (typu==TYPE_STRING && (typ_promene == WITHOUT_TYPE || typ_promene == TYPE_STRING)){
 		typ_promene=TYPE_STRING; 
@@ -808,11 +884,10 @@ int set_type_promene(int typu){
 		typ_promene=NIL;
 	}
 	else{
-		return ERROR_4; // jde o kombinovaní prace se stringy a čísly
+		return ERROR_4; // jde o kombinovaní prace se stringy a čísly a nebo spatne zadefinovana promena :)
 	}
 	return NO_ERROR;
 }
-
 int check_id(){
 	tKey k = ((char*)token->attribute.string->word);
 	nazev_posledni_ID=k;
@@ -831,7 +906,6 @@ int check_id(){
 		}
 	}
 }
-
 int zjisti_co_je_id(){
 	int result = NO_ERROR;
 			tKey k = ((char*)token->attribute.string->word);
@@ -1005,7 +1079,6 @@ int zjisti_co_je_id(){
 			}
 return -1;
 }
-
 int rule_param_counter(){
 	int result=NO_ERROR;
 	switch(token_type){
@@ -1085,14 +1158,23 @@ int rule_param_counter(){
 
 	}
 	return -1;
-
 }
-
 int rule_definice_promene(){
 	int result=NO_ERROR;
 	typ_promene=WITHOUT_TYPE;//není to zatím zadny typ
 	set_token_and_return(); 
 	switch(token_type){
+		case LENGHT:
+		case ORD:
+		case PRINT:
+		case CHR:
+		case SUBSTR:
+		case INPUTS:
+		case INPUTI:
+		case INPUTF:
+			result=rule_preset_fuctions();
+			retvar_to_result();
+			return result;
 		case TYPE_IDENTIFIER:
 		{
 			tKey k = ((char*)token->attribute.string->word);
@@ -1131,7 +1213,6 @@ int rule_definice_promene(){
 	}
 return -1;
 }
-
 int rule_def(){
 	int result = NO_ERROR;
 	switch(token_type){
@@ -1147,7 +1228,11 @@ int rule_def(){
 				tData *data2 = malloc(sizeof(tData));
 				data2=htRead(h_tabulka,k);
 				param_counter=0;
+				brackets_counter=0;
+
 				if(data2 == NULL || data2->definovano==false){//Pokud nebyla nalezena polozka, tak ji vloz	
+					gen_def_start(k);
+					set_token_and_return();
 					result=rule_def();
 					if(is_err(result)!=NO_ERROR){
 						return result;
@@ -1158,7 +1243,7 @@ int rule_def(){
 					data->type=typ_promene;	
 					last_id_func=true;
 					data->funkce=true;
-					if (data2!=NULL){
+					/*if (data2!=NULL){
 						if (param_counter!=data2->pocet_parametru && data->funkce!=data2->funkce){
 							if(data2->type!=TYPE_INT && data2->type!=TYPE_FLOAT && data2->type!=typ_promene){
 								return ERROR_2;
@@ -1167,83 +1252,50 @@ int rule_def(){
 								return ERROR_2;
 							}
 						}
-					}
+					}*/
 
 					htInsert(h_tabulka, k, data );
-					result = NO_ERROR;
 
-					return result;
+					return NO_ERROR;
 				}else{	
-					//printf("tato funkce už existuje nemůžete ji redefinovat\n");				
 					return ERROR_2;
 				}
 			}
 		break;
 		case TYPE_IDENTIFIER:
-			if (brackets_counter==0){
-				if(set_token_and_return() != LEFT_BRACKET){
-					result = ERROR_2;
-					return result;
-				}
-				else{
-					brackets_counter++;
-					result=rule_def();
-					return result;
-				}
-			}
-			if (brackets_counter==1){
-				if(set_token_and_return() != COMMA && token_type != RIGHT_BRACKET){
-					result = ERROR_2;
-					return result;
-				}
-				else if(token_type == COMMA){
-
-					param_counter++;
-				}
-				else {
-					brackets_counter--;
-				}
-				result=rule_def();
-				return result;
-			}
-			else{
-				result = ERROR_2;
-				return result;
-			}
-		break;
 		case LEFT_BRACKET:
-			if (brackets_counter==1){
-				if(set_token_and_return() != TYPE_IDENTIFIER){
-					result = ERROR_2;
-					return result;
-				}
-				else{
-					result=rule_def();
-					return result;
-				}
+			if (token_type==LEFT_BRACKET && brackets_counter==0){
+				brackets_counter++;
+				set_token_and_return();
+				result = rule_def();
+				return result;
+			}else if (token_type==LEFT_BRACKET && brackets_counter>0){
+				return ERROR_2;
+			}	
+			if (brackets_counter!=1){
+				return ERROR_2;
 			}
-			else{
+			char* k = ((char*)token->attribute.string->word);
+			gen_parametr(k,param_counter);
+			param_counter++;
+
+			if(set_token_and_return() != COMMA && token_type != RIGHT_BRACKET){
 				result = ERROR_2;
 				return result;
 			}
+			result=rule_def();
+			return result;
+
 		break;
 		case RIGHT_BRACKET:
-			if (brackets_counter==0){
+			if (brackets_counter==1){
+				brackets_counter--;
 				if(set_token_and_return() != END_OF_LINE){
-					result = ERROR_2;
-					return result;
+					return ERROR_2;
 				}
-				//printf("tady se zavola generator na generovani hlavičky funkce def nazev_funkce (param1, param2,....,paramN) \n");
-				result=program();
-				//printf("Uspěšné ukončení funkce, generuj end funkce\n");
-				return result;
-				
-
-			}
-			else{
-				result = ERROR_2;
-				return result;
-			}
+				return NO_ERROR;
+			}				
+			return ERROR_2;
 		break;
 		case COMMA:
 			if (brackets_counter==1){
@@ -1255,16 +1307,12 @@ int rule_def(){
 				return result;
 			}
 			else{
-				result = ERROR_2;
-				return result;
+				return ERROR_2;
 			}
 		break;
 	}
 return -1;
 }
-
-
-
 int rule_expr(){
 	int result;
 	int typ = TYPE_INT;
@@ -1335,7 +1383,6 @@ int rule_expr(){
 	}
 return -1;
 }
-
 int is_err(int ret){
 	switch(ret){
 		case ERROR_1:
@@ -1355,11 +1402,9 @@ int is_err(int ret){
 	}
 return -1;
 }
-
 bool is_operator(){
 	return ((token_type >= PLUS && token_type <= MUL)||(token_type >= COMPARE && token_type <= NOTEQUAL));
 }
-
 bool is_num(){
 	if (token_type==TYPE_IDENTIFIER){
 		int typ =zjisti_co_je_id();
@@ -1367,31 +1412,27 @@ bool is_num(){
 	}
 
 	return (token_type == TYPE_INT || token_type == TYPE_FLOAT );
-
 }
-
 void init_parser(){
 	tmp = malloc(sizeof(token_t));
 	token = malloc(sizeof(token_t));
 	brackets_counter = 0;
 	SInit(&stack);
-	SInit(&values);
+	TInit(&values);
 	SInit(&operatory);
 	h_tabulka = (tHTable*) malloc ( sizeof(tHTable) );
 	htInit(h_tabulka);
+	tmp_tabulka = (tHTable*) malloc ( sizeof(tHTable) );
+	htInit(tmp_tabulka);
 	already_init=true;
 }
-
 int set_token_and_return(){
 
 		get_token(token);
 		token_type = token->type;
 		////printf("%d\n",token_type );
 		return token_type;
-	
-
 }
-
 int pop_token(){
 	token_type = SPop(&stack);
 	////printf("POP_TOKEN: %d\n",token_type);
@@ -1410,8 +1451,6 @@ bool top_of_stack_prepared_for_reduction(tStack *stack){
 		}
 	}
 
-	//printf("I JE::::::::::::::::%d\n", i);
-	//switch(get_rule_from_stack(i)){
 	switch(i){
 		// E->i
 		case 1:
@@ -1635,7 +1674,6 @@ void check_data_type(){
 		}
 	}	
 }
-
 void do_E_rule(tStack *stack){
 	SPop(stack);
 	SPop(stack);	
@@ -1644,8 +1682,6 @@ void do_E_rule(tStack *stack){
 	SPush(stack, NONTERM);			
 	print_stack(stack);
 }
-
-
 void print_stack(tStack *stack){
 
 	/*printf("TISKNU OBSAH ZÁSOBNÍKU:\n");
@@ -1653,6 +1689,7 @@ void print_stack(tStack *stack){
 		printf("%d ", (stack)->a[i]);
 	}
 	printf("\nKONEC ZÁSOBNÍKU\n");*/
+	(void)stack;
 }
 void print_token_stack(Token_Stack *st){
 	//printf("TISKNU OBSAH ZÁSOBNÍKU TOKENůůů:\n");
