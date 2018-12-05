@@ -127,6 +127,7 @@ void gen_substr()
 
 }	
 
+
 void gen_ord()
 {
 	CAT_INST("LABEL $ord");
@@ -167,7 +168,7 @@ void gen_chr()
 	gen_built_end();
 	CAT_INST("LABEL $chr_error");
 	CAT_INST("CLEARS");
-	CAT_INST("EXIT int@49");
+	CAT_INST("EXIT int@6");
 	
 	CAT_INST("");
 
@@ -232,6 +233,12 @@ void print_output()
 	fputs(code_main->word, output_file);	
 	fclose(output_file);
 }
+void gen_zero_division
+{
+	CAT_INST("LABEL $zero_division");
+	CAT_INST("CLEARS");
+	CAT_INST("EXIT int@9");
+}
 
 void gen_builtins()
 {
@@ -244,6 +251,7 @@ void gen_builtins()
 	gen_inputs();
 	gen_inputi();
 	gen_inputf();
+	gen_zero_division();
 
 }
 void switch_stack(){
@@ -535,12 +543,29 @@ void gen_stack_mul()
 
 void gen_stack_div()
 {
+	//deleni nulou
+	CAT_INST("POPS GF@!tmp1");
+	CAT_INST("PUSHS GF@!tmp1");
+	CAT_INST("MOVE GF@!tmp2 float@0x0.0p+0");
+	CAT_INST("EQ GF@!tmp3 GF@!tmp1 GF@!tmp2");
+	CAT_INST("JUMPIFEQ $zero_division GF@!tmp3 bool@true");
+
 	CAT_INST("DIVS");
+	
+
 }
 
 void gen_stack_idiv()
 {
+	//deleni nulou
+	CAT_INST("POPS GF@!tmp1");
+	CAT_INST("PUSHS GF@!tmp1");
+	CAT_INST("MOVE GF@!tmp2 int@0");
+	CAT_INST("EQ GF@!tmp3 GF@!tmp1 GF@!tmp2");
+	CAT_INST("JUMPIFEQ $zero_division GF@!tmp3 bool@true");
+
 	CAT_INST("IDIVS");
+
 }
 
 void gen_stack_eq()
