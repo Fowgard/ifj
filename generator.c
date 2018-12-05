@@ -431,6 +431,7 @@ void gen_def_start(char *f_name)
 	CAT_STR(f_name);
 	CAT_INST("");
 	CAT_INST("PUSHFRAME");
+	CAT_INST("DEFVAR LF@!retvar");
 	uvnitr_funkce=1;
 
 
@@ -450,10 +451,11 @@ void gen_built_end(){
 
 void gen_def_end()
 {
-	CAT_INST("MOVE LF@!retvar LF@!result");
+	CAT_INST("MOVE LF@!retvar GF@!result");
 	CAT_INST("POPFRAME");
 	CAT_INST("RETURN");
 	gen_to_main = 1;
+	uvnitr_funkce=0;
 }
 void create_frame()//musi se vyrvorit frame pro parametry, pro lepsi prehlednost pri volani z parseru
 {

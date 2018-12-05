@@ -126,37 +126,31 @@ POPFRAME
 RETURN
 
 
+# zacatek funkce: asd
+LABEL $asd
+PUSHFRAME
+DEFVAR LF@!retvar
+DEFVAR LF@!x
+MOVE LF@!x LF@!0
+PUSHS LF@!x
+POPS GF@!result
+CREATEFRAME
+CALL $print
+MOVE LF@!retvar GF@!result
+POPFRAME
+RETURN
+
 # main:
 LABEL $$main
 CREATEFRAME
 PUSHFRAME
 
-DEFVAR LF@!x
-MOVE LF@!x nil@nil
 CREATEFRAME
-CALL $inputi
-MOVE GF@!result TF@!retvar
-MOVE LF@!x GF@!result
-PUSHS LF@!x
+PUSHS int@5
 POPS GF@!result
-CREATEFRAME
-CALL $print
-CREATEFRAME
-CALL $inputs
-MOVE GF@!result TF@!retvar
-MOVE LF@!x GF@!result
-PUSHS LF@!x
-POPS GF@!result
-CREATEFRAME
-CALL $print
-CREATEFRAME
-CALL $inputf
-MOVE GF@!result TF@!retvar
-MOVE LF@!x GF@!result
-PUSHS LF@!x
-POPS GF@!result
-CREATEFRAME
-CALL $print
+DEFVAR TF@!0
+MOVE TF@!0 GF@!result
+CALL $asd
 
 POPFRAME
 CLEARS
