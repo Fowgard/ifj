@@ -1,2 +1,3 @@
 x=65
-chr(x)
+y="asd"
+ord(y , x)

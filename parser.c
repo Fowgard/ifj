@@ -291,8 +291,6 @@ int rule_preset_fuctions(){
 			create_frame();
 			gen_call("length");
 			znic_zasobniky();
-			printf("SSSSSSSSSSSSSSSs%d\n", typ_promene);
-
 			if(brackets_counter==0){
 				brackets_counter=temp1;
 				uzavorkovana_funkce=false;
@@ -359,44 +357,51 @@ int rule_preset_fuctions(){
 			}
 
 		case ORD:
-			if (set_token_and_return()==LEFT_BRACKET){
+			if (set_token_and_return()==LEFT_BRACKET){			
+				uzavorkovana_funkce=true;
 				brackets_counter++;
+				if(set_token_and_return() != TYPE_IDENTIFIER && token_type != TYPE_STRING ){
+					return ERROR_5;//volani execute funkce
+				}
 			}
-			if (set_token_and_return()==TYPE_IDENTIFIER){
-				typ_promene=TYPE_STRING;
-				if(zjisti_co_je_id()!=TYPE_STRING){
-					//pridat do funkce jeste jednu promenou kdyz bude vracet string, tak at se ulozi delka 
-					return ERROR_5; //volani execute funkce
-				}	
+			else if(token_type != TYPE_IDENTIFIER && token_type != TYPE_STRING){
+				return ERROR_5;
 			}
-			else if(token_type==TYPE_STRING){
-				set_token_and_return();
+			result = rule_expresion_pusher();
+			if (is_err(result)!=NO_ERROR){
+				return result;
 			}
-			else{
-				return ERROR_5; //volani execute funkce
+			if (typ_promene!=TYPE_STRING){
+
+				return ERROR_5;
 			}
-			if(token_type!=COMMA && (set_token_and_return()!=TYPE_INT || token_type!=TYPE_IDENTIFIER)){
-				return ERROR_5; //volani execute funkce
+			if (token_type!=COMMA){
+				return ERROR_5;
 			}
-			if (token_type==TYPE_IDENTIFIER){
-				typ_promene=TYPE_INT;
-				if(zjisti_co_je_id()!=TYPE_INT){
-					//pridat do funkce jeste jednu promenou kdyz bude vracet string, tak at se ulozi delka 
-				return ERROR_5; //volani execute funkce
-				}		
+
+			if(set_token_and_return() != TYPE_IDENTIFIER && token_type != TYPE_INT){
+				return ERROR_5;
 			}
-			else if(token_type==TYPE_INT){
-				set_token_and_return();
+			typ_promene=WITHOUT_TYPE;
+			znic_zasobniky();
+			result = rule_expresion_pusher();
+			if (is_err(result)!=NO_ERROR){
+				return result;
 			}
-			else{
-				return ERROR_5; //volani execute funkce
+			if (typ_promene!=TYPE_INT){
+
+				return ERROR_5;
 			}
-			if(token_type==RIGHT_BRACKET ){
-				brackets_counter--;
-			}
+			result_to_var("GF@!tmp1")
+			create_frame();
+			gen_call("ord");
+			znic_zasobniky();
 			if(brackets_counter==0){
 				brackets_counter=temp1;
-				return TYPE_INT;//TADY SE MUSIME DOMLUVIT NA TOM ze budu vract podle toho co mi vrati dan :D bud NIL nebo INT
+				uzavorkovana_funkce=false;
+				return TYPE_INT;
+			}else{
+				return ERROR_5;
 			}
 		break;
 		case CHR:
@@ -557,7 +562,7 @@ int rule_expresion_pusher(){
 		if(prior[top_stack][p_tok1]==N){
 			
 			if (brackets_counter >0 && generator_popl_token==false && (token_type== RIGHT_BRACKET || token_type==COMMA)){
-				printf("AAAAAAAAAAAAAAAAAAAaa\n");
+				//printf("AAAAAAAAAAAAAAAAAAAaa\n");
 				gen_stack_push(TPop(&values));
 				gen_stack_pop("GF","result");
 				znic_zasobniky();
@@ -626,16 +631,16 @@ int rule_expresion_pusher(){
 		
 			if (brackets_counter==0 && token_type== RIGHT_BRACKET && uzavorkovana_funkce==true){
 				brackets_counter++;
-				printf("AAAAAAAAAAAAAAAAAAAAAAa\n");
+				//printf("AAAAAAAAAAAAAAAAAAAAAAa\n");
 			}
 			else{
-				printf("AAAAAAAAAAAAAAAAAAAAAAa%d \n", token_type);
+				//printf("AAAAAAAAAAAAAAAAAAAAAAa%d \n", token_type);
 				SPush(&stack, p_tok1);
 			}
 			print_stack(&stack);
 			if(remember_token_type == I_DOLLAR){
 				remember_token_type = END_OF_FILE;
-				printf("ANO\n");
+				//printf("ANO\n");
 				return ERROR_IDK;
 				break;
 			}else if (set_token_and_return() == END_OF_FILE || token_type == THEN ||
@@ -688,7 +693,7 @@ int rule_expresion_pusher(){
 			if(top_of_stack_prepared_for_reduction(&stack)){
 				//printf("redukuji :D stack:%d expr:%d\n",top_stack,p_tok1);
 			}else{
-				printf("FATAL ERROR WHEN REDUCING\n");
+				//printf("FATAL ERROR WHEN REDUCING\n");
 				return ERROR_IDK;
 			}
 			
@@ -696,11 +701,11 @@ int rule_expresion_pusher(){
 			//printf("Equal :D\n");
 			if (brackets_counter==0 && token_type== RIGHT_BRACKET && uzavorkovana_funkce==true){
 				brackets_counter++;
-				printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAa\n");
+			//	printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAa\n");
 
 			}
 			else{
-				printf("AAAAAAAAAAAAAAAAAAAAAAa%d \n", brackets_counter);
+				//printf("AAAAAAAAAAAAAAAAAAAAAAa%d \n", brackets_counter);
 
 				SPush(&stack, p_tok1);
 			}
@@ -1378,15 +1383,12 @@ void init_parser(){
 }
 
 int set_token_and_return(){
-	if (skipni_get_token){
-		skipni_get_token=false;
-		return token_type;
-	}else{
+
 		get_token(token);
 		token_type = token->type;
 		////printf("%d\n",token_type );
 		return token_type;
-	}
+	
 
 }
 
@@ -1646,11 +1648,11 @@ void do_E_rule(tStack *stack){
 
 void print_stack(tStack *stack){
 
-	printf("TISKNU OBSAH ZÁSOBNÍKU:\n");
+	/*printf("TISKNU OBSAH ZÁSOBNÍKU:\n");
 	for(int i = 0;i< (stack)->top+1;i++){
 		printf("%d ", (stack)->a[i]);
 	}
-	printf("\nKONEC ZÁSOBNÍKU\n");
+	printf("\nKONEC ZÁSOBNÍKU\n");*/
 }
 void print_token_stack(Token_Stack *st){
 	//printf("TISKNU OBSAH ZÁSOBNÍKU TOKENůůů:\n");
